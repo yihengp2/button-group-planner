@@ -1,0 +1,158 @@
+  }
+
+  function renderSettings() {
+    const q=el("settingsSearch").value.trim().toLowerCase();
+    const list=el("settingsCharacterList"); list.innerHTML="";
+    state.characters.filter(c=>c.name.toLowerCase().includes(q)).forEach(c=>{
+      const row=document.createElement("div"); row.className="settings-row";
+      const img=document.createElement("img"); img.className="tiny-portrait"; img.src=portraitUrl(c); img.alt=c.name; img.loading="lazy";
+      addPortraitErrorFallback(img,c.name);
+
+      const nameLabel=document.createElement("label"); nameLabel.textContent="角色名";
+      const nameInput=document.createElement("input"); nameInput.type="text"; nameInput.value=c.name;
+      nameInput.addEventListener("change",()=>{
+        const v=nameInput.value.trim();
+        if (v) { c.name=v; mutate(`已更新角色名：${v}`); }
+        else nameInput.value=c.name;
+      }); nameLabel.append(nameInput);
+
+      const usesLabel=document.createElement("label"); usesLabel.textContent=isRover(c)?"共享次数":"总次数";
+      const usesInput=document.createElement("input"); usesInput.type="number"; usesInput.step="1";
+      const min=Math.max(1,usageCount(c)); usesInput.min=String(min); usesInput.value=String(maxUses(c));
+      usesInput.disabled=isRover(c);
+      usesInput.addEventListener("change",()=>{
+        const n=Math.max(min,Math.floor(Number(usesInput.value)||min));
+        c.maxUses=n; mutate(`已更新 ${c.name} 的使用次数`);
+      }); usesLabel.append(usesInput);
+
+      const status=document.createElement("div"); status.className="setting-status";
+      status.textContent=isRover(c)?`共享 ${remaining(c)}/1`:`剩余 ${remaining(c)}/${maxUses(c)}`;
+
+      row.append(img,nameLabel,usesLabel,status); list.append(row);
+    });
+  }
+
+  function openSettings() {
+    el("settingsSearch").value="";
+    settingsBackdrop.hidden=false; document.body.style.overflow="hidden"; renderSettings();
+  }
+  function closeSettings() { settingsBackdrop.hidden=true; if (pickerBackdrop.hidden) document.body.style.overflow=""; }
+
+  function clearRound() {
+    if (!confirm("清空当前所有配队并恢复全部角色次数？角色设置会保留。")) return;
+    state.groups=[{id:state.nextGroupId++,characterIds:[null,null,null]}];
+    mutate("新一轮已开始");
+  }
+
+  function restoreDefaultCharacters() {
+    if (!confirm("恢复默认角色名称和使用次数？当前配队会保留。")) return;
+    state.characters = DEFAULT_ROSTER.map(c=>({...c}));
+    mutate("已恢复默认角色设置");
+  }
+
+  function resetAll() {
+    if (!confirm("重置全部数据？这会清除配队和自定义角色设置。")) return;
+    state=defaultState(); localStorage.removeItem(STORAGE_KEY); mutate("全部数据已重置");
+    closeSettings();
+  }
+
+  function exportBackup() {
+    const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob); const a=document.createElement("a");
+    const d=new Date().toISOString().slice(0,10);
+    a.href=url; a.download=`鸣潮矩阵配队助手-${d}.json`; document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    notice.textContent="备份已导出";
+  }
+
+  async function importBackup(file) {
+    try {
+      const parsed=JSON.parse(await file.text());
+      state=normalizeState(parsed); mutate("备份导入成功"); closeSettings();
+    } catch {
+      alert("无法导入：请选择本工具导出的 JSON 备份。");
+    }
+  }
+
+  function toBase64Url(text) {
+    const bytes=new TextEncoder().encode(text); let bin="";
+    bytes.forEach(b=>bin+=String.fromCharCode(b));
+    return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");
+  }
+  function fromBase64Url(text) {
+    let s=text.replace(/-/g,"+").replace(/_/g,"/");
+    while(s.length%4) s+="=";
+    const bin=atob(s); const bytes=Uint8Array.from(bin,ch=>ch.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
+  function sharePayload() {
+    return {
+      v:2,
+      teams:state.groups.map(g=>groupSlots(g).map(id=>id?byId(id)?.name||null:null))
+    };
+  }
+
+  async function shareConfig() {
+    const encoded=toBase64Url(JSON.stringify(sharePayload()));
+    const url=`${location.origin}${location.pathname}${location.search}#p=${encoded}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      notice.textContent="分享链接已复制；对方打开即可载入这套配队";
+    } catch {
+      prompt("复制下面的分享链接：",url);
+    }
+  }
+
+  function loadSharedConfig() {
+    const m=location.hash.match(/^#p=(.+)$/);
+    if (!m) return;
+    try {
+      const payload=JSON.parse(fromBase64Url(m[1]));
+      if (!payload || !Array.isArray(payload.teams)) throw new Error();
+      if (!confirm("检测到分享配队。是否载入这套配队？你的角色使用规则不会改变。")) return;
+      const nameMap=new Map(state.characters.map(c=>[c.name,c.id]));
+      const idSet=new Set(state.characters.map(c=>c.id));
+      state.groups=payload.teams.map(values=>({
+        id:state.nextGroupId++,
+        characterIds:Array.from({length:3},(_,i)=>{
+          const value=values?.[i];
+          const numeric=Number(value);
+          return idSet.has(numeric) ? numeric : (nameMap.get(value)||null);
+        })
+      }));
+      if (!state.groups.length) state.groups=[{id:state.nextGroupId++,characterIds:[null,null,null]}];
+      saveState("已载入分享配队");
+      history.replaceState(null,"",location.pathname+location.search);
+    } catch {
+      notice.textContent="分享链接无法解析";
+    }
+  }
+
+  el("addTeamBtn").addEventListener("click",()=>{
+    state.groups.push({id:state.nextGroupId++,characterIds:[null,null,null]}); mutate("已添加配队");
+  });
+  el("shareBtn").addEventListener("click",shareConfig);
+  el("clearRoundBtn").addEventListener("click",clearRound);
+  el("settingsBtn").addEventListener("click",openSettings);
+  el("closePickerBtn").addEventListener("click",closePicker);
+  el("closeSettingsBtn").addEventListener("click",closeSettings);
+  el("characterSearch").addEventListener("input",renderPicker);
+  el("settingsSearch").addEventListener("input",renderSettings);
+  el("restoreDefaultsBtn").addEventListener("click",restoreDefaultCharacters);
+  el("resetAllBtn").addEventListener("click",resetAll);
+  el("exportBtn").addEventListener("click",exportBackup);
+  el("importBtn").addEventListener("click",()=>el("importFile").click());
+  el("importFile").addEventListener("change",e=>{
+    const f=e.target.files?.[0]; if(f) importBackup(f); e.target.value="";
+  });
+  pickerBackdrop.addEventListener("click",e=>{if(e.target===pickerBackdrop)closePicker();});
+  settingsBackdrop.addEventListener("click",e=>{if(e.target===settingsBackdrop)closeSettings();});
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape"){ if(!pickerBackdrop.hidden)closePicker(); else if(!settingsBackdrop.hidden)closeSettings(); }
+  });
+
+  loadSharedConfig();
+  renderStats();
+  renderTeams();
+  saveState();
+})();
