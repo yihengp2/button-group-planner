@@ -1,0 +1,102 @@
+name: Add Qingxiao social preview cover
+on:
+  push:
+    paths:
+      - '.github/workflows/add-social-cover.yml'
+permissions:
+  contents: write
+jobs:
+  add-cover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add Qingxiao cover and social metadata
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+          import re, html as htmlmod
+          from urllib.parse import urljoin
+
+          # Prefer the Nanoka Qingxiao page if it exposes a stable direct image.
+          nanoka_page = 'https://ww.nanoka.cc/character/1413'
+          fallback = 'https://raw.githubusercontent.com/ryanbenson/wuthering-waves-assets/master/images/Qingxiao.png'
+          image_bytes = None
+          candidates = []
+          try:
+              req = Request(nanoka_page, headers={'User-Agent':'Mozilla/5.0'})
+              page = urlopen(req, timeout=20).read().decode('utf-8', 'ignore')
+              patterns = [
+                  r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)',
+                  r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+                  r'["\']([^"\']*(?:Qingxiao|qingxiao|1413)[^"\']*\.(?:png|jpg|jpeg|webp)(?:\?[^"\']*)?)["\']'
+              ]
+              for pat in patterns:
+                  for m in re.findall(pat, page, flags=re.I):
+                      u = htmlmod.unescape(m).replace('\\/','/')
+                      candidates.append(urljoin(nanoka_page, u))
+          except Exception:
+              pass
+          candidates.append(fallback)
+
+          for u in candidates:
+              try:
+                  req = Request(u, headers={'User-Agent':'Mozilla/5.0','Referer':nanoka_page})
+                  r = urlopen(req, timeout=20)
+                  data = r.read()
+                  ctype = r.headers.get('Content-Type','')
+                  if len(data) > 3000 and ('image' in ctype or data[:8] == b'\x89PNG\r\n\x1a\n'):
+                      image_bytes = data
+                      break
+              except Exception:
+                  continue
+          if image_bytes is None:
+              raise SystemExit('Could not download Qingxiao portrait')
+
+          Path('qingxiao-cover.png').write_bytes(image_bytes)
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          start = '<!-- social-preview:start -->'
+          end = '<!-- social-preview:end -->'
+          if start in s and end in s:
+              s = s[:s.index(start)] + s[s.index(end)+len(end):]
+
+          block = '''<!-- social-preview:start -->
+<meta name="description" content="鸣潮矩阵配队助手：快速组建矩阵配队，自动追踪角色剩余使用次数。">
+<meta property="og:title" content="鸣潮矩阵配队助手">
+<meta property="og:description" content="快速组建矩阵配队，自动追踪角色剩余使用次数。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://yihengp2.github.io/button-group-planner/">
+<meta property="og:image" content="https://yihengp2.github.io/button-group-planner/qingxiao-cover.png">
+<meta property="og:image:secure_url" content="https://yihengp2.github.io/button-group-planner/qingxiao-cover.png">
+<meta property="og:image:alt" content="清宵">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="鸣潮矩阵配队助手">
+<meta name="twitter:description" content="快速组建矩阵配队，自动追踪角色剩余使用次数。">
+<meta name="twitter:image" content="https://yihengp2.github.io/button-group-planner/qingxiao-cover.png">
+<link rel="image_src" href="https://yihengp2.github.io/button-group-planner/qingxiao-cover.png">
+<!-- social-preview:end -->'''
+          anchor = '<title>鸣潮矩阵配队助手</title>'
+          if anchor not in s:
+              raise SystemExit('Page title anchor not found')
+          s = s.replace(anchor, anchor + '\n' + block, 1)
+
+          # Give crawlers that fall back to the first page image a static candidate too.
+          body_anchor = '<body>'
+          hidden_img = '<img src="qingxiao-cover.png" alt="清宵" width="152" height="152" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none" aria-hidden="true">'
+          if hidden_img not in s:
+              s = s.replace(body_anchor, body_anchor + '\n' + hidden_img, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html qingxiao-cover.png
+          git diff --cached --quiet && exit 0
+          git commit -m 'Set Qingxiao as social sharing cover'
+          git push
