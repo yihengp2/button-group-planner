@@ -1,5 +1,5 @@
 (() => {
-  const parts = ["app-part1.txt", "app-part2.txt", "app-part3.txt"];
+  const parts = ["app-part1.txt", "app-part2.txt", "app-ownership.txt", "app-part3.txt"];
   Promise.all(parts.map(path => fetch(path, {cache: "no-cache"}).then(r => {
     if (!r.ok) throw new Error(`Failed to load ${path}`);
     return r.text();
