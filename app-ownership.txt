@@ -1,0 +1,299 @@
+
+  // --- User-specific ownership exclusions ---
+  function defaultState() {
+    return {
+      nextGroupId: 2,
+      characters: DEFAULT_ROSTER.map(c => ({...c})),
+      groups: [{id:1, characterIds:[]}],
+      unownedIds: []
+    };
+  }
+
+  function normalizeState(input) {
+    if (!input || !Array.isArray(input.characters) || !Array.isArray(input.groups)) {
+      throw new Error("Invalid backup");
+    }
+    const incomingById = new Map(input.characters.map(c => [Number(c.id), c]));
+    const incomingByName = new Map(input.characters.map(c => [String(c.name), c]));
+    const characters = DEFAULT_ROSTER.map(def => {
+      const old = incomingById.get(def.id) || incomingByName.get(def.name);
+      const name = old && typeof old.name === "string" && old.name.trim() ? old.name.trim() : def.name;
+      const rawMax = old ? Math.floor(Number(old.maxUses)) : def.maxUses;
+      return {
+        ...def,
+        name,
+        maxUses: def.pool === "rover" ? 1 : (Number.isFinite(rawMax) && rawMax > 0 ? rawMax : def.maxUses)
+      };
+    });
+    const validIds = new Set(characters.map(c => c.id));
+    const unownedIds = Array.isArray(input.unownedIds)
+      ? [...new Set(input.unownedIds.map(Number).filter(id => validIds.has(id)))]
+      : [];
+    const unownedSet = new Set(unownedIds);
+    const groups = input.groups.map(g => ({
+      id: Number(g.id) || 0,
+      characterIds: Array.isArray(g.characterIds)
+        ? g.characterIds.slice(0,3)
+            .map(v => v == null ? null : Number(v))
+            .map(v => validIds.has(v) && !unownedSet.has(v) ? v : null)
+        : []
+    }));
+    const cleanedGroups = groups.map(g => ({
+      ...g,
+      characterIds: Array.from({length:3}, (_,i) => g.characterIds[i] ?? null)
+    }));
+    const maxGroupId = cleanedGroups.reduce((m,g) => Math.max(m,g.id),0);
+    return {
+      nextGroupId: Math.max(Number(input.nextGroupId)||1, maxGroupId+1),
+      characters,
+      groups: cleanedGroups.length ? cleanedGroups : [{id:1, characterIds:[null,null,null]}],
+      unownedIds
+    };
+  }
+
+  function isUnowned(c) {
+    return Boolean(c && Array.isArray(state.unownedIds) && state.unownedIds.includes(c.id));
+  }
+
+  function ownedRoverExists() {
+    return state.characters.some(c => isRover(c) && !isUnowned(c));
+  }
+
+  function totalCapacity() {
+    let total = ownedRoverExists() ? 1 : 0;
+    for (const c of state.characters) {
+      if (!isRover(c) && !isUnowned(c)) total += maxUses(c);
+    }
+    return total;
+  }
+
+  function updateOwnershipButton() {
+    const btn = el("ownershipBtn");
+    if (!btn) return;
+    const count = Array.isArray(state.unownedIds) ? state.unownedIds.length : 0;
+    btn.textContent = count ? `添加未拥有角色 (${count})` : "添加未拥有角色";
+  }
+
+  function renderStats() {
+    const used = totalUsed(), total = totalCapacity();
+    el("teamCount").textContent = state.groups.length;
+    el("usedCount").textContent = used;
+    el("remainingCount").textContent = Math.max(0,total-used);
+    el("availableCount").textContent = state.characters.filter(c => !isUnowned(c) && remaining(c) > 0).length;
+
+    const rover = state.characters.find(c => isRover(c) && !isUnowned(c));
+    if (!rover) {
+      el("roverBadge").textContent = "未拥有";
+      el("roverBadge").className = "usage-badge exhausted";
+    } else {
+      const roverLeft = remaining(rover);
+      el("roverBadge").textContent = `${roverLeft}/1`;
+      el("roverBadge").className = "usage-badge" + (roverLeft===0 ? " exhausted" : "");
+    }
+    updateOwnershipButton();
+  }
+
+  function optionDisabledReason(c) {
+    if (isUnowned(c)) return "未拥有";
+    const group = state.groups.find(g => g.id===pickerTarget.groupId);
+    const slots = groupSlots(group);
+    const inOtherSlot = slots.some((id,i) => i!==pickerTarget.slotIndex && id===c.id);
+    if (inOtherSlot) return "本队已有";
+    return remaining(c,pickerTarget)<=0 ? "已用完" : "";
+  }
+
+  function renderPicker() {
+    if (!pickerTarget) return;
+    const q = el("characterSearch").value.trim().toLowerCase();
+    const filtered = state.characters.filter(c => !isUnowned(c) && c.name.toLowerCase().includes(q));
+    const available = [], unavailable = [];
+    filtered.forEach(c => {
+      const reason = optionDisabledReason(c);
+      (reason ? unavailable : available).push({c,reason});
+    });
+    const content = el("pickerContent"); content.innerHTML="";
+    const addSection = (title,items) => {
+      if (!items.length) return;
+      const sec=document.createElement("section"); sec.className="picker-section";
+      const sh=document.createElement("div"); sh.className="picker-section-head";
+      sh.innerHTML=`<strong>${title}</strong><span>${items.length} 个</span>`;
+      const grid=document.createElement("div"); grid.className="character-grid";
+      items.forEach(x=>grid.append(makeCharacterOption(x.c,x.reason||"")));
+      sec.append(sh,grid); content.append(sec);
+    };
+    addSection("可用角色",available);
+    addSection("已用完 / 不可选",unavailable);
+    if (!available.length && !unavailable.length) {
+      const empty=document.createElement("div"); empty.className="no-results";
+      empty.textContent=q ? "没有匹配的已拥有角色" : "没有可选择的已拥有角色";
+      content.append(empty);
+    }
+  }
+
+  function cleanUnownedFromTeams() {
+    const unowned = new Set(state.unownedIds || []);
+    let removed = 0;
+    state.groups.forEach(group => {
+      groupSlots(group);
+      group.characterIds = group.characterIds.map(id => {
+        if (id != null && unowned.has(Number(id))) {
+          removed++;
+          return null;
+        }
+        return id;
+      });
+    });
+    return removed;
+  }
+
+  function makeOwnershipOption(c) {
+    const excluded = isUnowned(c);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "character-option" + (excluded ? " unavailable" : "");
+    btn.setAttribute("aria-pressed", excluded ? "true" : "false");
+    btn.title = excluded ? `${c.name}：未拥有，点击恢复` : `${c.name}：已拥有，点击标记为未拥有`;
+
+    const wrap = document.createElement("div");
+    wrap.className = "portrait-wrap";
+    const img = document.createElement("img");
+    img.className = "character-portrait";
+    img.src = portraitUrl(c);
+    img.alt = c.name;
+    img.loading = "lazy";
+    addPortraitErrorFallback(img,c.name);
+    const badge = document.createElement("span");
+    badge.className = "char-badge";
+    badge.textContent = excluded ? "未拥有" : "拥有";
+    wrap.append(img,badge);
+
+    const nm = document.createElement("span");
+    nm.className = "char-name";
+    nm.textContent = c.name;
+    btn.append(wrap,nm);
+    if (isRover(c)) {
+      const tag = document.createElement("span");
+      tag.className = "rover-tag";
+      tag.textContent = "漂泊者形态";
+      btn.append(tag);
+    }
+
+    btn.addEventListener("click", () => {
+      const set = new Set(state.unownedIds || []);
+      if (set.has(c.id)) {
+        set.delete(c.id);
+        state.unownedIds = [...set];
+        saveState(`已恢复 ${c.name} 为已拥有角色`);
+      } else {
+        set.add(c.id);
+        state.unownedIds = [...set];
+        const removed = cleanUnownedFromTeams();
+        saveState(removed ? `已将 ${c.name} 标记为未拥有，并从当前配队移除` : `已将 ${c.name} 标记为未拥有`);
+      }
+      renderStats();
+      renderTeams();
+      renderOwnership();
+      if (!pickerBackdrop.hidden) renderPicker();
+    });
+    return btn;
+  }
+
+  function renderOwnership() {
+    const backdrop = el("ownershipBackdrop");
+    if (!backdrop || backdrop.hidden) return;
+    const q = el("ownershipSearch").value.trim().toLowerCase();
+    const filtered = state.characters.filter(c => c.name.toLowerCase().includes(q));
+    const unowned = filtered.filter(isUnowned);
+    const owned = filtered.filter(c => !isUnowned(c));
+    const content = el("ownershipContent");
+    content.innerHTML = "";
+
+    const addSection = (title, items) => {
+      if (!items.length) return;
+      const sec = document.createElement("section");
+      sec.className = "picker-section";
+      const head = document.createElement("div");
+      head.className = "picker-section-head";
+      head.innerHTML = `<strong>${title}</strong><span>${items.length} 个</span>`;
+      const grid = document.createElement("div");
+      grid.className = "character-grid";
+      items.forEach(c => grid.append(makeOwnershipOption(c)));
+      sec.append(head,grid);
+      content.append(sec);
+    };
+
+    addSection("未拥有角色", unowned);
+    addSection("已拥有角色", owned);
+    if (!filtered.length) {
+      const empty = document.createElement("div");
+      empty.className = "no-results";
+      empty.textContent = "没有匹配的角色";
+      content.append(empty);
+    }
+  }
+
+  function openOwnership() {
+    el("ownershipSearch").value = "";
+    el("ownershipBackdrop").hidden = false;
+    document.body.style.overflow = "hidden";
+    renderOwnership();
+    setTimeout(() => el("ownershipSearch").focus(),0);
+  }
+
+  function closeOwnership() {
+    el("ownershipBackdrop").hidden = true;
+    if (pickerBackdrop.hidden && settingsBackdrop.hidden) document.body.style.overflow = "";
+  }
+
+  function injectOwnershipUi() {
+    if (!el("ownershipBtn")) {
+      const btn = document.createElement("button");
+      btn.id = "ownershipBtn";
+      btn.className = "btn";
+      btn.type = "button";
+      btn.textContent = "添加未拥有角色";
+      el("settingsBtn").before(btn);
+      btn.addEventListener("click",openOwnership);
+    }
+
+    if (!el("ownershipBackdrop")) {
+      const host = document.createElement("div");
+      host.innerHTML = `
+        <div id="ownershipBackdrop" class="modal-backdrop" hidden>
+          <section class="modal picker-modal" role="dialog" aria-modal="true" aria-labelledby="ownershipTitle">
+            <div class="modal-head">
+              <div>
+                <h2 id="ownershipTitle">添加未拥有角色</h2>
+                <p>点击角色将其标记为未拥有；再次点击可恢复。未拥有角色不会出现在配队选择中。</p>
+              </div>
+              <button id="closeOwnershipBtn" class="icon-btn" type="button" aria-label="关闭">×</button>
+            </div>
+            <label class="search-wrap">
+              <span>搜索角色</span>
+              <input id="ownershipSearch" type="search" placeholder="输入角色名…" autocomplete="off">
+            </label>
+            <div id="ownershipContent"></div>
+          </section>
+        </div>`;
+      document.body.append(host.firstElementChild);
+      el("closeOwnershipBtn").addEventListener("click",closeOwnership);
+      el("ownershipSearch").addEventListener("input",renderOwnership);
+      el("ownershipBackdrop").addEventListener("click",e=>{if(e.target===el("ownershipBackdrop"))closeOwnership();});
+      document.addEventListener("keydown",e=>{if(e.key==="Escape" && !el("ownershipBackdrop").hidden)closeOwnership();});
+    }
+    updateOwnershipButton();
+  }
+
+  injectOwnershipUi();
+
+  // A shared team may contain a character this user has marked as unowned.
+  // Clean those slots after the existing share-loader finishes, while keeping
+  // the ownership list itself private to this browser.
+  queueMicrotask(() => {
+    const removed = cleanUnownedFromTeams();
+    if (removed) {
+      saveState("分享配队中未拥有的角色已自动留空");
+      renderStats();
+      renderTeams();
+    }
+  });
