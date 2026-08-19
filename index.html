@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>鸣潮矩阵配队助手</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #18202a;
+      --muted: #687386;
+      --border: #dfe3e8;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --danger: #b42318;
+      --danger-soft: #fff1f0;
+      --disabled: #eff1f3;
+      --shadow: 0 2px 10px rgba(0,0,0,.06);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background: var(--bg); color: var(--text); }
+    button,input,select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; }
+    .app { width: min(1180px, calc(100% - 28px)); margin: 28px auto 60px; }
+    .topbar { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:22px; }
+    h1 { margin:0 0 5px; font-size:clamp(1.6rem,4vw,2.2rem); }
+    h2 { margin:0; font-size:1.2rem; }
+    p { color:var(--muted); margin:4px 0 0; }
+    .toolbar { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+    .btn { border:1px solid var(--border); background:var(--panel); color:var(--text); padding:9px 13px; border-radius:11px; transition:.15s ease; }
+    .btn:hover:not(:disabled) { border-color:#b9c1cb; transform:translateY(-1px); }
+    .btn.primary { background:var(--accent); border-color:var(--accent); color:white; }
+    .btn.danger { color:var(--danger); background:var(--danger-soft); border-color:#f5c5c0; }
+    .btn.small { padding:6px 9px; font-size:.9rem; }
+    .section { margin-top:24px; }
+    .section-head { display:flex; justify-content:space-between; align-items:end; gap:12px; margin-bottom:12px; }
+    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:15px; box-shadow:var(--shadow); }
+    .character-card.unavailable { opacity:.58; filter:grayscale(.8); background:var(--disabled); }
+    .character-preview-row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:13px; }
+    .character-preview { border:1px solid var(--border); background:var(--panel); color:var(--text); padding:9px 12px; border-radius:11px; font-weight:700; min-width:0; flex:1; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .status-badge { display:inline-flex; align-items:center; border-radius:999px; padding:5px 9px; font-size:.84rem; font-weight:650; background:var(--accent-soft); color:var(--accent); white-space:nowrap; }
+    .unavailable .status-badge { background:#e4e7ec; color:#667085; }
+    .usage-row { display:flex; justify-content:space-between; font-size:.84rem; color:var(--muted); margin:12px 0 6px; }
+    .usage-track { height:9px; border-radius:999px; overflow:hidden; background:#e7e9ed; }
+    .usage-fill { height:100%; background:var(--accent); transition:width .2s ease; }
+    .group-card { margin-bottom:12px; }
+    .group-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
+    .slots { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+    .slot { border:1px dashed var(--border); border-radius:12px; min-height:58px; padding:10px; display:flex; align-items:center; }
+    .slot.filled { border-style:solid; background:var(--accent-soft); }
+    .slot-row { width:100%; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .slot-name { font-weight:700; overflow:hidden; text-overflow:ellipsis; }
+    .empty-slot { color:var(--muted); font-size:.9rem; }
+    .assign-row { display:grid; grid-template-columns:1fr auto; gap:8px; margin-top:12px; }
+    select { width:100%; border:1px solid var(--border); background:var(--panel); color:var(--text); padding:9px 10px; border-radius:10px; outline:none; }
+    select:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+    .empty-state { padding:34px 20px; text-align:center; border:1px dashed var(--border); border-radius:var(--radius); color:var(--muted); background:rgba(255,255,255,.55); }
+    .notice { margin-top:16px; min-height:22px; color:var(--muted); font-size:.9rem; }
+    .saved { display:inline-flex; align-items:center; gap:6px; color:#067647; font-size:.88rem; margin-top:5px; }
+    .saved::before { content:"●"; font-size:.65rem; }
+    .rule-note { margin-top:8px; font-size:.9rem; color:var(--muted); }
+    #importFile { display:none; }
+    @media (max-width:980px){ .grid{grid-template-columns:repeat(3,minmax(0,1fr));} }
+    @media (max-width:760px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr));} .topbar{flex-direction:column;} .toolbar{justify-content:flex-start;} }
+    @media (max-width:560px){ .app{width:min(100% - 18px,1180px);margin-top:16px;} .grid{grid-template-columns:1fr;} .slots{grid-template-columns:1fr;} .assign-row{grid-template-columns:1fr;} .section-head{align-items:flex-start;flex-direction:column;} .toolbar{width:100%;} .toolbar .btn{flex:1 1 auto;} }
+  </style>
+</head>
+<body>
+<main class="app">
+  <div class="topbar">
+    <div>
+      <h1>鸣潮矩阵配队助手</h1>
+      <p>将角色分配到每队最多 3 人的配队中，并自动追踪剩余可用次数。</p>
+      <div class="rule-note">规则：维里奈、守岸人、穗穗、莫宁、达妮娅、白芷、卜灵各可使用 2 次；其他角色 1 次；所有名称含“漂泊者”的角色共同共享 1 次。</div>
+      <div class="saved" id="saveStatus">已保存到本机浏览器</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="exportBtn" type="button">导出备份</button>
+      <button class="btn" id="importBtn" type="button">导入备份</button>
+      <button class="btn danger" id="resetBtn" type="button">重置全部</button>
+      <input id="importFile" type="file" accept=".json,application/json" />
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="section-head"><div><h2>角色</h2><p>剩余次数为 0 时，该角色将无法加入新的配队。</p></div></div>
+    <div id="characterGrid" class="grid"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div><h2>配队</h2><p>每个配队最多放入 3 个不同角色。</p></div>
+      <button class="btn primary" id="addGroupBtn" type="button">+ 添加配队</button>
+    </div>
+    <div id="groupList"></div>
+    <div id="groupEmpty" class="empty-state">暂无配队。点击“添加配队”开始。</div>
+  </section>
+
+  <div class="notice" id="notice" aria-live="polite"></div>
+</main>
+<script>
+(() => {
+  const STORAGE_KEY = "wuwaTeamPlanner.v1";
+  const roster = [{"name":"散华","maxUses":1},{"name":"白芷","maxUses":2},{"name":"凌阳","maxUses":1},{"name":"折枝","maxUses":1},{"name":"釉瑚","maxUses":1},{"name":"珂莱塔","maxUses":1},{"name":"洛瑟菈","maxUses":1},{"name":"绯雪","maxUses":1},{"name":"穗穗","maxUses":2},{"name":"炽霞","maxUses":1},{"name":"安可","maxUses":1},{"name":"莫特斐","maxUses":1},{"name":"长离","maxUses":1},{"name":"布兰特","maxUses":1},{"name":"露帕","maxUses":1},{"name":"嘉贝莉娜","maxUses":1},{"name":"莫宁","maxUses":2},{"name":"爱弥斯","maxUses":1},{"name":"达妮娅","maxUses":2},{"name":"卡卡罗","maxUses":1},{"name":"吟霖","maxUses":1},{"name":"渊武","maxUses":1},{"name":"相里要","maxUses":1},{"name":"灯灯","maxUses":1},{"name":"奥古斯塔","maxUses":1},{"name":"卜灵","maxUses":2},{"name":"丽贝卡","maxUses":1},{"name":"漂泊者·导电","maxUses":1},{"name":"秧秧","maxUses":1},{"name":"秋水","maxUses":1},{"name":"忌炎","maxUses":1},{"name":"鉴心","maxUses":1},{"name":"夏空","maxUses":1},{"name":"漂泊者·气动","maxUses":1},{"name":"卡提希娅","maxUses":1},{"name":"尤诺","maxUses":1},{"name":"仇远","maxUses":1},{"name":"西格莉卡","maxUses":1},{"name":"维里奈","maxUses":2},{"name":"漂泊者·衍射","maxUses":1},{"name":"今汐","maxUses":1},{"name":"守岸人","maxUses":2},{"name":"菲比","maxUses":1},{"name":"赞妮","maxUses":1},{"name":"琳奈","maxUses":1},{"name":"陆·赫斯","maxUses":1},{"name":"露西","maxUses":1},{"name":"桃祈","maxUses":1},{"name":"丹瑾","maxUses":1},{"name":"椿","maxUses":1},{"name":"漂泊者·湮灭","maxUses":1},{"name":"洛可可","maxUses":1},{"name":"坎特蕾拉","maxUses":1},{"name":"弗洛洛","maxUses":1},{"name":"千咲","maxUses":1},{"name":"秧秧·玄翎","maxUses":1}];
+  const defaultState = () => ({ nextGroupId: 1, characters: roster.map((r,i)=>({id:i+1,...r})), groups: [] });
+  let state = loadState();
+  const characterGrid=document.getElementById("characterGrid"), groupList=document.getElementById("groupList"), groupEmpty=document.getElementById("groupEmpty"), notice=document.getElementById("notice"), saveStatus=document.getElementById("saveStatus");
+  function normalizeState(input){ if(!input||!Array.isArray(input.characters)||!Array.isArray(input.groups)) throw new Error("Invalid backup"); const currentNames=new Map(roster.map(r=>[r.name,r.maxUses])); const chars=input.characters.filter(c=>currentNames.has(String(c.name))).map(c=>({id:Number(c.id),name:String(c.name),maxUses:currentNames.get(String(c.name))})); const existing=new Set(chars.map(c=>c.name)); roster.forEach(r=>{if(!existing.has(r.name)) chars.push({id:Math.max(0,...chars.map(c=>c.id))+1,name:r.name,maxUses:r.maxUses});}); const validIds=new Set(chars.map(c=>c.id)); const groups=input.groups.map(g=>({id:Number(g.id),characterIds:Array.isArray(g.characterIds)?[...new Set(g.characterIds.map(Number).filter(id=>validIds.has(id)))].slice(0,3):[]})); const maxGroupId=groups.reduce((m,g)=>Math.max(m,g.id),0); return {nextGroupId:Math.max(Number(input.nextGroupId)||1,maxGroupId+1),characters:chars,groups}; }
+  function loadState(){ try{const raw=localStorage.getItem(STORAGE_KEY); return raw?normalizeState(JSON.parse(raw)):defaultState();}catch{return defaultState();} }
+  function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));saveStatus.textContent="已保存到本机浏览器";}
+  function mutate(message){saveStatus.textContent="保存中…";saveState();if(message)notice.textContent=message;render();}
+  function isRover(c){return c.name.includes("漂泊者");}
+  function roverUsed(){return state.groups.some(g=>g.characterIds.some(id=>{const c=state.characters.find(x=>x.id===id);return c&&isRover(c);}));}
+  function usedCount(id){const c=state.characters.find(x=>x.id===id); if(c&&isRover(c)) return roverUsed()?1:0; return state.groups.reduce((sum,g)=>sum+(g.characterIds.includes(id)?1:0),0);}
+  function remaining(c){ if(isRover(c)) return roverUsed()?0:1; return Math.max(0,c.maxUses-usedCount(c.id)); }
+  function renderCharacters(){ characterGrid.innerHTML=""; state.characters.forEach(c=>{const used=usedCount(c.id),left=remaining(c),unavailable=left<=0,max=isRover(c)?1:c.maxUses,percent=max?(left/max)*100:0; const card=document.createElement("article");card.className="card character-card"+(unavailable?" unavailable":""); const row=document.createElement("div");row.className="character-preview-row"; const name=document.createElement("div");name.className="character-preview";name.textContent=c.name; const badge=document.createElement("span");badge.className="status-badge";badge.textContent=unavailable?"不可用":`${left} 次剩余`; row.append(name,badge); const usage=document.createElement("div");usage.className="usage-row";usage.innerHTML=`<span>${used} 已用</span><span>${left} 剩余</span>`; const track=document.createElement("div");track.className="usage-track";const fill=document.createElement("div");fill.className="usage-fill";fill.style.width=`${Math.max(0,Math.min(100,percent))}%`;track.appendChild(fill); card.append(row,usage,track); if(isRover(c)){const n=document.createElement("div");n.className="rule-note";n.textContent="共享漂泊者 1 次额度";card.appendChild(n);} characterGrid.appendChild(card); }); }
+  function renderGroups(){ groupList.innerHTML=""; groupEmpty.style.display=state.groups.length?"none":"block"; state.groups.forEach((group,index)=>{const card=document.createElement("article");card.className="card group-card"; const head=document.createElement("div");head.className="group-head";const title=document.createElement("strong");title.textContent=`配队 ${index+1}`;const del=document.createElement("button");del.className="btn danger small";del.type="button";del.textContent="删除配队";del.addEventListener("click",()=>{state.groups=state.groups.filter(g=>g.id!==group.id);mutate("已删除配队，并恢复对应角色次数。");});head.append(title,del); const slots=document.createElement("div");slots.className="slots"; for(let i=0;i<3;i++){const slot=document.createElement("div"),cid=group.characterIds[i];if(cid!==undefined){const c=state.characters.find(x=>x.id===cid);if(c){slot.className="slot filled";const r=document.createElement("div");r.className="slot-row";const nm=document.createElement("span");nm.className="slot-name";nm.textContent=c.name;const rm=document.createElement("button");rm.className="btn small";rm.type="button";rm.textContent="移除";rm.addEventListener("click",()=>{group.characterIds=group.characterIds.filter(id=>id!==cid);mutate(`已从配队 ${index+1} 移除 ${c.name}，次数已恢复。`);});r.append(nm,rm);slot.appendChild(r);}}else{slot.className="slot";const e=document.createElement("span");e.className="empty-slot";e.textContent=`空位 ${i+1}`;slot.appendChild(e);}slots.appendChild(slot);} const assign=document.createElement("div");assign.className="assign-row";const select=document.createElement("select"); const available=state.characters.filter(c=>remaining(c)>0&&!group.characterIds.includes(c.id)); const ph=document.createElement("option");ph.value="";ph.textContent=group.characterIds.length>=3?"该配队已满":available.length?"选择角色…":"没有可用角色";select.appendChild(ph); available.forEach(c=>{const o=document.createElement("option");o.value=c.id;o.textContent=`${c.name} — ${remaining(c)} 次剩余`;select.appendChild(o);}); const add=document.createElement("button");add.className="btn";add.type="button";add.textContent="加入配队";add.disabled=group.characterIds.length>=3||available.length===0;add.addEventListener("click",()=>{const id=Number(select.value);if(!id||group.characterIds.length>=3)return;const c=state.characters.find(x=>x.id===id);if(!c||remaining(c)<=0||group.characterIds.includes(id))return;group.characterIds.push(id);mutate(`已将 ${c.name} 加入配队 ${index+1}。`);});assign.append(select,add);card.append(head,slots,assign);groupList.appendChild(card); }); }
+  function render(){renderCharacters();renderGroups();}
+  document.getElementById("addGroupBtn").addEventListener("click",()=>{state.groups.push({id:state.nextGroupId++,characterIds:[]});mutate("已添加新配队。");});
+  document.getElementById("exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a"),d=new Date(),stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;a.href=url;a.download=`鸣潮矩阵配队助手-${stamp}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);notice.textContent="备份已导出。";});
+  document.getElementById("importBtn").addEventListener("click",()=>document.getElementById("importFile").click());
+  document.getElementById("importFile").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;try{state=normalizeState(JSON.parse(await file.text()));mutate("备份导入成功。");}catch{notice.textContent="无法导入该文件。请使用本工具导出的 JSON 备份。";}finally{e.target.value="";}});
+  document.getElementById("resetBtn").addEventListener("click",()=>{if(!confirm("确认清空所有配队并恢复初始角色次数？"))return;state=defaultState();mutate("已重置全部配队。")});
+  render();saveState();
+})();
+</script>
+</body>
+</html>
