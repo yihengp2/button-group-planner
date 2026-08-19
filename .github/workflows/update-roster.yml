@@ -1,0 +1,34 @@
+name: Update character roster
+on:
+  push:
+    paths:
+      - '.github/workflows/update-roster.yml'
+permissions:
+  contents: write
+jobs:
+  update-roster:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add Qingxiao and Jingran
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = '[56,"秧秧·玄翎",1,"YangyangXuanling"]].map'
+          new = '[56,"秧秧·玄翎",1,"YangyangXuanling"],[57,"清宵",1,"Qingxiao"],[58,"景燃",1,"Jingran"]].map'
+          if old not in s:
+              raise SystemExit('Roster tail not found; refusing to modify index.html')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Commit roster update
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Add Qingxiao and Jingran to character roster'
+          git push
