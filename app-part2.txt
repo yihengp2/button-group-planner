@@ -1,0 +1,153 @@
+      const title = document.createElement("div");
+      title.className = "team-title";
+      title.innerHTML = `<span class="team-index">${index+1}</span><span>配队 ${index+1}</span>`;
+      const actions = document.createElement("div");
+      actions.className = "team-actions";
+      const clear = document.createElement("button");
+      clear.className = "mini-btn"; clear.type = "button"; clear.textContent = "清空";
+      clear.addEventListener("click", () => {
+        group.characterIds = [null,null,null];
+        mutate(`已清空配队 ${index+1}`);
+      });
+      const del = document.createElement("button");
+      del.className = "mini-btn"; del.type = "button"; del.textContent = "删除";
+      del.addEventListener("click", () => {
+        state.groups = state.groups.filter(g => g.id !== group.id);
+        if (!state.groups.length) state.groups.push({id:state.nextGroupId++, characterIds:[null,null,null]});
+        mutate("已删除配队，角色次数已恢复");
+      });
+      actions.append(clear,del); head.append(title,actions);
+
+      const slots = document.createElement("div");
+      slots.className = "slots";
+      group.characterIds.forEach((id, slotIndex) => {
+        const c = byId(id);
+        const slot = document.createElement("div");
+        slot.className = "slot" + (c ? "" : " empty");
+
+        const select = document.createElement("button");
+        select.className = "slot-select"; select.type = "button";
+        select.setAttribute("aria-label", c ? `替换 ${c.name}` : `选择配队 ${index+1} 的角色 ${slotIndex+1}`);
+        select.addEventListener("click", () => openPicker(group.id, slotIndex));
+
+        if (c) {
+          const img = document.createElement("img");
+          img.className = "slot-portrait"; img.src = portraitUrl(c); img.alt = c.name; img.loading = "lazy";
+          addPortraitErrorFallback(img,c.name);
+          const info = document.createElement("div"); info.className = "slot-info";
+          const nm = document.createElement("span"); nm.className = "slot-name"; nm.textContent = c.name;
+          const use = document.createElement("span"); use.className = "slot-use";
+          use.textContent = isRover(c) ? "漂泊者共享 0/1" : `${remaining(c)}/${maxUses(c)} 次剩余`;
+          info.append(nm,use); select.append(img,info);
+
+          const remove = document.createElement("button");
+          remove.type="button"; remove.className="remove-slot"; remove.textContent="×"; remove.setAttribute("aria-label",`移除 ${c.name}`);
+          remove.addEventListener("click", e => {
+            e.stopPropagation();
+            group.characterIds[slotIndex]=null;
+            mutate(`已移除 ${c.name}，次数已恢复`);
+          });
+          slot.append(select,remove);
+        } else {
+          const plus = document.createElement("span"); plus.className="plus"; plus.textContent="+";
+          const label = document.createElement("span"); label.textContent="选择角色";
+          select.append(plus,label); slot.append(select);
+        }
+        slots.append(slot);
+      });
+
+      card.append(head,slots); teamList.append(card);
+    });
+  }
+
+  function mutate(message) {
+    saveState(message);
+    renderStats();
+    renderTeams();
+    if (!settingsBackdrop.hidden) renderSettings();
+    if (!pickerBackdrop.hidden) renderPicker();
+  }
+
+  function openPicker(groupId, slotIndex) {
+    pickerTarget = {groupId,slotIndex};
+    const groupIndex = state.groups.findIndex(g => g.id===groupId);
+    el("pickerContext").textContent = `配队 ${groupIndex+1} · 位置 ${slotIndex+1}`;
+    el("characterSearch").value = "";
+    pickerBackdrop.hidden = false;
+    document.body.style.overflow = "hidden";
+    renderPicker();
+    setTimeout(() => el("characterSearch").focus(),0);
+  }
+
+  function closePicker() {
+    pickerBackdrop.hidden = true; pickerTarget = null;
+    if (settingsBackdrop.hidden) document.body.style.overflow = "";
+  }
+
+  function optionDisabledReason(c) {
+    const group = state.groups.find(g => g.id===pickerTarget.groupId);
+    const slots = groupSlots(group);
+    const inOtherSlot = slots.some((id,i) => i!==pickerTarget.slotIndex && id===c.id);
+    if (inOtherSlot) return "本队已有";
+    return remaining(c,pickerTarget)<=0 ? "已用完" : "";
+  }
+
+  function makeCharacterOption(c, disabledReason="") {
+    const btn = document.createElement("button");
+    btn.type="button";
+    const left = remaining(c,pickerTarget);
+    btn.className = "character-option" + (disabledReason ? " unavailable" : "") + (maxUses(c)>1 ? " multi-use" : "");
+    btn.disabled = Boolean(disabledReason);
+    btn.title = disabledReason || c.name;
+
+    const wrap = document.createElement("div"); wrap.className="portrait-wrap";
+    const img = document.createElement("img"); img.className="character-portrait"; img.src=portraitUrl(c); img.alt=c.name; img.loading="lazy";
+    addPortraitErrorFallback(img,c.name);
+    const badge = document.createElement("span"); badge.className="char-badge"; badge.textContent=`${left}/${maxUses(c)}`;
+    wrap.append(img,badge);
+    const nm = document.createElement("span"); nm.className="char-name"; nm.textContent=c.name;
+    btn.append(wrap,nm);
+    if (isRover(c)) {
+      const rt=document.createElement("span"); rt.className="rover-tag"; rt.textContent="共享次数"; btn.append(rt);
+    } else if (disabledReason) {
+      const rt=document.createElement("span"); rt.className="rover-tag"; rt.textContent=disabledReason; btn.append(rt);
+    }
+    if (!disabledReason) btn.addEventListener("click",()=>selectCharacter(c.id));
+    return btn;
+  }
+
+  function renderPicker() {
+    if (!pickerTarget) return;
+    const q = el("characterSearch").value.trim().toLowerCase();
+    const filtered = state.characters.filter(c => c.name.toLowerCase().includes(q));
+    const available = [], unavailable = [];
+    filtered.forEach(c => {
+      const reason = optionDisabledReason(c);
+      (reason ? unavailable : available).push({c,reason});
+    });
+    const content = el("pickerContent"); content.innerHTML="";
+    const addSection = (title,items) => {
+      if (!items.length) return;
+      const sec=document.createElement("section"); sec.className="picker-section";
+      const sh=document.createElement("div"); sh.className="picker-section-head";
+      sh.innerHTML=`<strong>${title}</strong><span>${items.length} 个</span>`;
+      const grid=document.createElement("div"); grid.className="character-grid";
+      items.forEach(x=>grid.append(makeCharacterOption(x.c,x.reason||"")));
+      sec.append(sh,grid); content.append(sec);
+    };
+    addSection("可用角色",available);
+    addSection("已用完 / 不可选",unavailable);
+    if (!available.length && !unavailable.length) {
+      const empty=document.createElement("div"); empty.className="no-results"; empty.textContent="没有匹配的角色"; content.append(empty);
+    }
+  }
+
+  function selectCharacter(characterId) {
+    const group = state.groups.find(g => g.id===pickerTarget.groupId);
+    const c = byId(characterId);
+    if (!group || !c) return;
+    if (optionDisabledReason(c)) return;
+    groupSlots(group);
+    group.characterIds[pickerTarget.slotIndex]=c.id;
+    closePicker();
+    mutate(`已选择 ${c.name}`);
