@@ -1,60 +1,120 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#111827">
-<title>鸣潮矩阵配队助手</title>
-<style>
-:root{--bg:#f4f6f8;--p:#fff;--p2:#f9fafb;--t:#111827;--m:#667085;--b:#dfe3e8;--a:#2563eb;--a2:#eff6ff;--d:#b42318;--d2:#fff1f0;--ok:#067647;--sh:0 3px 14px rgba(16,24,40,.07)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed}a{color:inherit}.app{width:min(1080px,calc(100% - 28px));margin:28px auto 64px}.top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}.top h1{margin:0 0 4px;font-size:clamp(1.7rem,4vw,2.3rem)}p{margin:4px 0 0;color:var(--m)}.saved{margin-top:8px;color:var(--ok);font-size:.88rem}.actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}.btn{border:1px solid var(--b);background:var(--p);color:var(--t);padding:9px 13px;border-radius:11px;font-weight:650;transition:.15s}.btn:hover:not(:disabled){border-color:#aeb7c4;transform:translateY(-1px)}.btn.primary{background:var(--a);border-color:var(--a);color:#fff}.btn.danger{background:var(--d2);border-color:#f5c5c0;color:var(--d)}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:22px 0 12px}.stat{background:var(--p);border:1px solid var(--b);border-radius:13px;padding:12px 14px;box-shadow:var(--sh)}.stat span{display:block;color:var(--m);font-size:.82rem}.stat strong{display:block;font-size:1.35rem;margin-top:2px}.rover{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--a2);border:1px solid #cfe0ff;border-radius:14px;padding:13px 15px;margin-bottom:24px}.rover p{font-size:.88rem}.badge{display:inline-flex;align-items:center;justify-content:center;min-width:48px;padding:6px 10px;border-radius:999px;background:var(--a);color:#fff;font-weight:800;white-space:nowrap}.badge.off{background:#98a2b3}.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}.head h2,.modal h2{margin:0;font-size:1.2rem}.teams{display:grid;gap:12px}.team{background:var(--p);border:1px solid var(--b);border-radius:16px;padding:13px;box-shadow:var(--sh)}.teamhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.teamtitle{display:flex;align-items:center;gap:8px;font-weight:800}.num{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:var(--a2);color:var(--a);font-size:.9rem}.smallacts{display:flex;gap:6px}.mini{border:1px solid var(--b);background:var(--p);border-radius:9px;padding:6px 8px;color:var(--m);font-size:.84rem}.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.slot{position:relative;min-height:108px;border:1px dashed #c9d0da;border-radius:13px;background:var(--p2);overflow:hidden}.slot.empty{display:grid;place-items:center}.choose{width:100%;height:100%;min-height:108px;border:0;background:transparent;padding:8px;display:flex;align-items:center;gap:10px;text-align:left;color:var(--t)}.empty .choose{justify-content:center;flex-direction:column;color:var(--m)}.plus{font-size:1.7rem;line-height:1;color:#98a2b3}.portrait{width:72px;height:88px;border-radius:10px;object-fit:cover;object-position:top center;background:#e9edf2;flex:0 0 auto}.slotinfo{min-width:0;display:grid;gap:5px}.slotname{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.slotuse{font-size:.82rem;color:var(--m)}.x{position:absolute;right:6px;top:6px;width:26px;height:26px;border:1px solid rgba(255,255,255,.7);border-radius:999px;background:rgba(17,24,39,.66);color:#fff;line-height:1}.notice{min-height:22px;margin-top:14px;color:var(--m);font-size:.9rem}footer{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;color:var(--m);font-size:.78rem;margin-top:30px}.back{position:fixed;inset:0;background:rgba(17,24,39,.55);padding:18px;z-index:50;overflow:auto}.back[hidden]{display:none}.modal{width:min(880px,100%);margin:4vh auto;background:var(--p);border-radius:18px;border:1px solid var(--b);box-shadow:0 22px 60px rgba(0,0,0,.2);padding:16px}.modalhead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}.icon{width:38px;height:38px;border:1px solid var(--b);border-radius:10px;background:var(--p);font-size:1.45rem;line-height:1}.search{display:block;color:var(--m);font-size:.84rem;margin-bottom:16px}.search input{display:block;width:100%;margin-top:6px;border:1px solid var(--b);border-radius:11px;padding:10px 12px;outline:none;color:var(--t);background:var(--p)}.search input:focus,.setrow input:focus{border-color:var(--a);box-shadow:0 0 0 3px var(--a2)}.picksec{margin-top:16px}.pickhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.pickhead span{color:var(--m);font-size:.8rem}.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}.char{position:relative;border:1px solid var(--b);border-radius:12px;background:var(--p);padding:7px;text-align:center;min-width:0}.char:hover:not(:disabled){border-color:var(--a);box-shadow:0 0 0 2px var(--a2)}.char.unavailable{opacity:.45;filter:grayscale(.85);background:#f2f4f7}.char.multi:not(.unavailable){border-color:#a9c7ff}.picwrap{position:relative}.cpic{width:100%;aspect-ratio:1/1.15;border-radius:9px;object-fit:cover;object-position:top center;background:#e9edf2;display:block}.fallback{display:grid;place-items:center;background:#e9edf2;color:#667085;font-weight:850}.cpic.fallback{aspect-ratio:1/1.15;border-radius:9px}.cname{display:block;margin-top:5px;font-weight:750;font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cbadge{position:absolute;right:4px;top:4px;border-radius:999px;padding:3px 6px;background:rgba(17,24,39,.72);color:#fff;font-size:.7rem;font-weight:800}.tag{display:block;margin-top:3px;font-size:.7rem;color:var(--a)}.nores{padding:24px;text-align:center;color:var(--m);border:1px dashed var(--b);border-radius:12px}.settings{width:min(940px,100%)}.setlist{display:grid;gap:7px;max-height:52vh;overflow:auto;padding-right:4px}.setrow{display:grid;grid-template-columns:46px minmax(150px,1fr) 120px 90px;align-items:center;gap:9px;padding:7px;border:1px solid var(--b);border-radius:11px}.tiny{width:42px;height:48px;border-radius:8px;object-fit:cover;object-position:top center;background:#e9edf2}.setrow label{font-size:.76rem;color:var(--m)}.setrow input{width:100%;display:block;margin-top:3px;border:1px solid var(--b);border-radius:9px;padding:7px 8px;outline:none;background:var(--p);color:var(--t)}.setstatus{font-size:.78rem;text-align:right;color:var(--m)}.setacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--b)}.note{color:var(--m);font-size:.8rem;line-height:1.5}@media(max-width:800px){.top{flex-direction:column}.actions{justify-content:flex-start}.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.setrow{grid-template-columns:42px 1fr 96px}.setstatus{grid-column:2/-1;text-align:left}}@media(max-width:560px){.app{width:min(100% - 18px,1080px);margin-top:15px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.actions{width:100%}.actions .btn{flex:1 1 auto}.head{align-items:flex-start;flex-direction:column}.slots{gap:6px}.slot,.choose{min-height:118px}.choose{flex-direction:column;justify-content:center;text-align:center;padding:6px}.portrait{width:58px;height:70px}.slotinfo{width:100%}.slotname{font-size:.82rem}.slotuse{font-size:.72rem}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.back{padding:8px}.modal{margin:1vh auto;padding:12px}.setrow{grid-template-columns:38px 1fr 82px;gap:6px}.tiny{width:36px;height:42px}.rover{align-items:flex-start}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111827">
+  <title>鸣潮矩阵配队助手</title>
+  <meta name="description" content="鸣潮矩阵配队助手：快速组建矩阵配队，自动追踪角色剩余使用次数。">
+  <meta property="og:title" content="鸣潮矩阵配队助手">
+  <meta property="og:description" content="快速组建矩阵配队，自动追踪角色剩余使用次数。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://yihengp2.github.io/button-group-planner/">
+  <meta property="og:image" content="https://raw.githubusercontent.com/ryanbenson/wuthering-waves-assets/master/images/Qingxiao.png">
+  <meta property="og:image:secure_url" content="https://raw.githubusercontent.com/ryanbenson/wuthering-waves-assets/master/images/Qingxiao.png">
+  <meta property="og:image:alt" content="清宵">
+  <meta property="og:locale" content="zh_CN">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="鸣潮矩阵配队助手">
+  <meta name="twitter:description" content="快速组建矩阵配队，自动追踪角色剩余使用次数。">
+  <meta name="twitter:image" content="https://raw.githubusercontent.com/ryanbenson/wuthering-waves-assets/master/images/Qingxiao.png">
+  <link rel="image_src" href="https://raw.githubusercontent.com/ryanbenson/wuthering-waves-assets/master/images/Qingxiao.png">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<main class="app">
-<header class="top"><div><h1>鸣潮矩阵配队助手</h1><p>快速组建矩阵配队，自动追踪角色剩余使用次数。</p><div id="saved" class="saved">● 已保存到本机</div></div><div class="actions"><button id="share" class="btn primary">分享配置</button><button id="newRound" class="btn">重新开始本轮</button><button id="settings" class="btn">⚙ 角色设置</button></div></header>
-<section class="stats"><div class="stat"><span>配队</span><strong id="teamCount">0</strong></div><div class="stat"><span>已用次数</span><strong id="usedCount">0</strong></div><div class="stat"><span>剩余次数</span><strong id="remainCount">0</strong></div><div class="stat"><span>可选角色</span><strong id="availCount">0</strong></div></section>
-<section class="rover"><div><strong>漂泊者共享次数</strong><p>导电 / 气动 / 衍射 / 湮灭共同共享 1 次；选择任一形态后，其他形态同时不可用。</p></div><span id="roverBadge" class="badge">1/1</span></section>
-<section><div class="head"><div><h2>配队</h2><p>点击空位直接选择角色；点击已选角色可快速替换。</p></div><button id="addTeam" class="btn primary">+ 添加配队</button></div><div id="teams" class="teams"></div></section>
-<div id="notice" class="notice" aria-live="polite"></div>
-<footer><span>角色名单参考 <a href="https://ww.nanoka.cc/character/" target="_blank" rel="noreferrer">nanoka.cc</a></span><span>角色头像来自 <a href="https://github.com/ryanbenson/wuthering-waves-assets" target="_blank" rel="noreferrer">wuthering-waves-assets</a></span></footer>
-</main>
-<div id="pickerBack" class="back" hidden><section class="modal" role="dialog" aria-modal="true"><div class="modalhead"><div><h2>选择角色</h2><p id="pickContext"></p></div><button id="closePick" class="icon" aria-label="关闭">×</button></div><label class="search">搜索角色<input id="search" type="search" placeholder="输入角色名…" autocomplete="off"></label><div id="pickContent"></div></section></div>
-<div id="setBack" class="back" hidden><section class="modal settings" role="dialog" aria-modal="true"><div class="modalhead"><div><h2>角色设置</h2><p>平时无需修改；可在规则变化时调整名称和使用次数。</p></div><button id="closeSet" class="icon" aria-label="关闭">×</button></div><label class="search">查找角色<input id="setSearch" type="search" placeholder="搜索设置…" autocomplete="off"></label><div id="setList" class="setlist"></div><div class="setacts"><button id="defaults" class="btn">恢复默认角色设置</button><button id="export" class="btn">导出备份</button><button id="import" class="btn">导入备份</button><button id="reset" class="btn danger">重置全部数据</button><input id="file" type="file" accept=".json,application/json" hidden></div><p class="note">漂泊者始终共享 1 次。头像若无法加载会自动显示文字占位。</p></section></div>
-<script>
-(()=>{"use strict";
-const KEY="wuwaTeamPlanner.v1",BASE="https://raw.githubusercontent.com/ryanbenson/wuthering-waves-assets/master/images/";
-const R=[[1,"散华",1,"Sanhua"],[2,"白芷",2,"Baizhi"],[3,"凌阳",1,"Lingyang"],[4,"折枝",1,"Zhezhi"],[5,"釉瑚",1,"Youhu"],[6,"珂莱塔",1,"Carlotta"],[7,"洛瑟菈",1,"Lucilla"],[8,"绯雪",1,"Hiyuki"],[9,"穗穗",2,"Suisui"],[10,"炽霞",1,"Chixia"],[11,"安可",1,"Encore"],[12,"莫特斐",1,"Mortefi"],[13,"长离",1,"Changli"],[14,"布兰特",1,"Brant"],[15,"露帕",1,"Lupa"],[16,"嘉贝莉娜",1,"Galbrena"],[17,"莫宁",2,"Mornye"],[18,"爱弥斯",1,"Aemeath"],[19,"达妮娅",2,"Denia"],[20,"卡卡罗",1,"Calcharo"],[21,"吟霖",1,"Yinlin"],[22,"渊武",1,"Yuanwu"],[23,"相里要",1,"XiangliYao"],[24,"灯灯",1,"Lumi"],[25,"奥古斯塔",1,"Augusta"],[26,"卜灵",2,"Buling"],[27,"丽贝卡",1,"Rebecca"],[28,"漂泊者·导电",1,"RoverElectroFemale","rover"],[29,"秧秧",1,"Yangyang"],[30,"秋水",1,"Aalto"],[31,"忌炎",1,"Jiyan"],[32,"鉴心",1,"Jianxin"],[33,"夏空",1,"Ciaccona"],[34,"漂泊者·气动",1,"RoverAeroFemale","rover"],[35,"卡提希娅",1,"Cartethyia"],[36,"尤诺",1,"Iuno"],[37,"仇远",1,"Qiuyuan"],[38,"西格莉卡",1,"Sigrika"],[39,"维里奈",2,"Verina"],[40,"漂泊者·衍射",1,"RoverSpectroFemale","rover"],[41,"今汐",1,"Jinhsi"],[42,"守岸人",2,"Shorekeeper"],[43,"菲比",1,"Phoebe"],[44,"赞妮",1,"Zani"],[45,"琳奈",1,"Lynae"],[46,"陆·赫斯",1,"LuukHerssen"],[47,"露西",1,"Lucy"],[48,"桃祈",1,"Taoqi"],[49,"丹瑾",1,"Danjin"],[50,"椿",1,"Camellya"],[51,"漂泊者·湮灭",1,"RoverHavocFemale","rover"],[52,"洛可可",1,"Roccia"],[53,"坎特蕾拉",1,"Cantarella"],[54,"弗洛洛",1,"Phrolova"],[55,"千咲",1,"Chisa"],[56,"秧秧·玄翎",1,"YangyangXuanling"],[57,"清宵",1,"Qingxiao"],[58,"景燃",1,"Jingran"]].map(x=>({id:x[0],name:x[1],maxUses:x[2],imageKey:x[3],pool:x[4]||null}));
-const $=id=>document.getElementById(id);let state,pick=null;
-function fresh(){return{nextGroupId:2,characters:R.map(c=>({...c})),groups:[{id:1,characterIds:[null,null,null]}]}}
-function norm(v){if(!v||!Array.isArray(v.characters)||!Array.isArray(v.groups))throw Error();const oi=new Map(v.characters.map(c=>[Number(c.id),c])),on=new Map(v.characters.map(c=>[String(c.name),c]));const chars=R.map(d=>{const o=oi.get(d.id)||on.get(d.name),n=o&&String(o.name||"").trim()||d.name,m=o?Math.floor(Number(o.maxUses)):d.maxUses;return{...d,name:n,maxUses:d.pool?1:(Number.isFinite(m)&&m>0?m:d.maxUses)}}),valid=new Set(chars.map(c=>c.id));let gs=v.groups.map(g=>({id:Number(g.id)||0,characterIds:Array.from({length:3},(_,i)=>{const z=Array.isArray(g.characterIds)?g.characterIds[i]:null,z2=z==null?null:Number(z);return valid.has(z2)?z2:null})}));if(!gs.length)gs=[{id:1,characterIds:[null,null,null]}];return{nextGroupId:Math.max(Number(v.nextGroupId)||1,gs.reduce((m,g)=>Math.max(m,g.id),0)+1),characters:chars,groups:gs}}
-try{state=localStorage.getItem(KEY)?norm(JSON.parse(localStorage.getItem(KEY))):fresh()}catch{state=fresh()}
-const byId=id=>state.characters.find(c=>c.id===Number(id)),isR=c=>c&&c.pool==="rover",slots=g=>{while(g.characterIds.length<3)g.characterIds.push(null);return g.characterIds};
-function used(c,ignore=null){if(!c)return 0;let n=0;for(const g of state.groups)for(let i=0;i<3;i++){if(ignore&&g.id===ignore.groupId&&i===ignore.slotIndex)continue;const u=byId(slots(g)[i]);if(!u)continue;if(isR(c)){if(isR(u))return 1}else if(u.id===c.id)n++}return isR(c)?0:n}
-const max=c=>isR(c)?1:Math.max(1,Number(c.maxUses)||1),left=(c,ignore=null)=>Math.max(0,max(c)-used(c,ignore));
-function save(msg){$("saved").textContent="● 保存中…";localStorage.setItem(KEY,JSON.stringify(state));$("saved").textContent="● 已保存到本机";if(msg)$("notice").textContent=msg}
-function mutate(msg){save(msg);render()}
-function img(c,cls){const im=document.createElement("img");im.className=cls;im.src=BASE+c.imageKey+".png";im.alt=c.name;im.loading="lazy";im.addEventListener("error",()=>{const f=document.createElement("div");f.className=cls+" fallback";f.textContent=(c.name||"?")[0];im.replaceWith(f)},{once:true});return im}
-function capacity(){return 1+state.characters.filter(c=>!isR(c)).reduce((s,c)=>s+max(c),0)}function totalUsed(){let n=0,r=false;for(const g of state.groups)for(const id of slots(g)){const c=byId(id);if(c){if(isR(c))r=true;else n++}}return n+(r?1:0)}
-function stats(){const u=totalUsed(),t=capacity();$("teamCount").textContent=state.groups.length;$("usedCount").textContent=u;$("remainCount").textContent=Math.max(0,t-u);$("availCount").textContent=state.characters.filter(c=>left(c)>0).length;const r=state.characters.find(isR),l=r?left(r):0;$("roverBadge").textContent=l+"/1";$("roverBadge").className="badge"+(l?"":" off")}
-function renderTeams(){const box=$("teams");box.innerHTML="";state.groups.forEach((g,ix)=>{slots(g);const card=document.createElement("article");card.className="team";const h=document.createElement("div");h.className="teamhead";const tt=document.createElement("div");tt.className="teamtitle";const nu=document.createElement("span");nu.className="num";nu.textContent=ix+1;const tx=document.createElement("span");tx.textContent="配队 "+(ix+1);tt.append(nu,tx);const aa=document.createElement("div");aa.className="smallacts";const clear=document.createElement("button");clear.className="mini";clear.textContent="清空";clear.onclick=()=>{g.characterIds=[null,null,null];mutate("已清空配队 "+(ix+1))};const del=document.createElement("button");del.className="mini";del.textContent="删除";del.onclick=()=>{state.groups=state.groups.filter(x=>x.id!==g.id);if(!state.groups.length)state.groups.push({id:state.nextGroupId++,characterIds:[null,null,null]});mutate("已删除配队，角色次数已恢复")};aa.append(clear,del);h.append(tt,aa);const ss=document.createElement("div");ss.className="slots";g.characterIds.forEach((id,si)=>{const c=byId(id),s=document.createElement("div");s.className="slot"+(c?"":" empty");const b=document.createElement("button");b.className="choose";b.onclick=()=>openPicker(g.id,si);if(c){b.append(img(c,"portrait"));const info=document.createElement("div");info.className="slotinfo";const n=document.createElement("span");n.className="slotname";n.textContent=c.name;const u=document.createElement("span");u.className="slotuse";u.textContent=isR(c)?"漂泊者共享 · "+left(c)+"/1 剩余":left(c)+"/"+max(c)+" 次剩余";info.append(n,u);b.append(info);const rm=document.createElement("button");rm.className="x";rm.textContent="×";rm.title="移除";rm.onclick=e=>{e.stopPropagation();g.characterIds[si]=null;mutate("已移除 "+c.name+"，使用次数已恢复")};s.append(b,rm)}else{const p=document.createElement("span");p.className="plus";p.textContent="＋";const t=document.createElement("span");t.textContent="选择角色";b.append(p,t);s.append(b)}ss.append(s)});card.append(h,ss);box.append(card)})}
-function render(){stats();renderTeams();if(!$("setBack").hidden)renderSettings();if(!$("pickerBack").hidden)renderPicker()}
-function openPicker(groupId,slotIndex){pick={groupId,slotIndex};const g=state.groups.find(x=>x.id===groupId),ix=state.groups.indexOf(g);$("pickContext").textContent="配队 "+(ix+1)+" · 位置 "+(slotIndex+1);$("search").value="";$("pickerBack").hidden=false;document.body.style.overflow="hidden";renderPicker();setTimeout(()=>$("search").focus(),0)}function closePicker(){$("pickerBack").hidden=true;pick=null;if($("setBack").hidden)document.body.style.overflow=""}
-function reason(c){const g=state.groups.find(x=>x.id===pick.groupId),sl=slots(g);if(sl.some((id,i)=>i!==pick.slotIndex&&id===c.id))return"本队已有";return left(c,pick)<=0?"已用完":""}
-function charBtn(c,why){const b=document.createElement("button");b.className="char"+(why?" unavailable":"")+(max(c)>1?" multi":"");b.disabled=!!why;b.title=why||c.name;const w=document.createElement("div");w.className="picwrap";w.append(img(c,"cpic"));const bd=document.createElement("span");bd.className="cbadge";bd.textContent=left(c,pick)+"/"+max(c);w.append(bd);const n=document.createElement("span");n.className="cname";n.textContent=c.name;b.append(w,n);if(isR(c)||why){const t=document.createElement("span");t.className="tag";t.textContent=isR(c)?"共享次数":why;b.append(t)}if(!why)b.onclick=()=>{const g=state.groups.find(x=>x.id===pick.groupId);g.characterIds[pick.slotIndex]=c.id;closePicker();mutate("已选择 "+c.name)};return b}
-function renderPicker(){if(!pick)return;const q=$("search").value.trim().toLowerCase(),arr=state.characters.filter(c=>c.name.toLowerCase().includes(q)),av=[],off=[];arr.forEach(c=>{const w=reason(c);(w?off:av).push({c,w})});const out=$("pickContent");out.innerHTML="";for(const [title,list] of [["可用角色",av],["已用完 / 不可选",off]]){if(!list.length)continue;const sec=document.createElement("section");sec.className="picksec";const h=document.createElement("div");h.className="pickhead";const st=document.createElement("strong");st.textContent=title;const co=document.createElement("span");co.textContent=list.length+" 个";h.append(st,co);const gr=document.createElement("div");gr.className="grid";list.forEach(o=>gr.append(charBtn(o.c,o.w)));sec.append(h,gr);out.append(sec)}if(!arr.length){const e=document.createElement("div");e.className="nores";e.textContent="没有匹配的角色";out.append(e)}}
-function renderSettings(){const q=$("setSearch").value.trim().toLowerCase(),box=$("setList");box.innerHTML="";state.characters.filter(c=>c.name.toLowerCase().includes(q)).forEach(c=>{const row=document.createElement("div");row.className="setrow";row.append(img(c,"tiny"));const nl=document.createElement("label");nl.append("角色名");const ni=document.createElement("input");ni.value=c.name;ni.onchange=()=>{const v=ni.value.trim();if(v){c.name=v;mutate("已更新角色名："+v)}else ni.value=c.name};nl.append(ni);const ul=document.createElement("label");ul.append(isR(c)?"共享次数":"总次数");const ui=document.createElement("input");ui.type="number";ui.step="1";const mn=Math.max(1,used(c));ui.min=mn;ui.value=max(c);ui.disabled=isR(c);ui.onchange=()=>{c.maxUses=Math.max(mn,Math.floor(Number(ui.value)||mn));mutate("已更新 "+c.name+" 的使用次数")};ul.append(ui);const st=document.createElement("div");st.className="setstatus";st.textContent=isR(c)?"共享 "+left(c)+"/1":"剩余 "+left(c)+"/"+max(c);row.append(nl,ul,st);box.append(row)})}
-function openSet(){$("setSearch").value="";$("setBack").hidden=false;document.body.style.overflow="hidden";renderSettings()}function closeSet(){$("setBack").hidden=true;if($("pickerBack").hidden)document.body.style.overflow=""}
-function newRound(){if(!confirm("清空当前所有配队并恢复全部角色次数？角色设置会保留。"))return;state.groups=[{id:state.nextGroupId++,characterIds:[null,null,null]}];mutate("新一轮已开始")}
-function defaults(){if(!confirm("恢复默认角色名称和使用次数？当前配队会保留。"))return;const u=new Map(state.characters.map(c=>[c.id,used(c)]));state.characters=R.map(c=>({...c,maxUses:isR(c)?1:Math.max(c.maxUses,u.get(c.id)||0)}));mutate("已恢复默认角色设置")}
-function reset(){if(!confirm("重置全部数据？这会清除配队和自定义角色设置。"))return;state=fresh();localStorage.removeItem(KEY);mutate("全部数据已重置");closeSet()}
-function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="鸣潮矩阵配队助手-"+new Date().toISOString().slice(0,10)+".json";document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);$("notice").textContent="备份已导出"}
-async function importData(f){try{state=norm(JSON.parse(await f.text()));mutate("备份导入成功");closeSet()}catch{alert("无法导入：请选择本工具导出的 JSON 备份。")}}
-function enc(s){const b=new TextEncoder().encode(s);let x="";b.forEach(v=>x+=String.fromCharCode(v));return btoa(x).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"")}function dec(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";return new TextDecoder().decode(Uint8Array.from(atob(s),c=>c.charCodeAt(0)))}
-async function share(){const p={v:2,teams:state.groups.map(g=>slots(g).map(id=>id||null))},url=location.origin+location.pathname+location.search+"#p="+enc(JSON.stringify(p));try{await navigator.clipboard.writeText(url);$("notice").textContent="分享链接已复制；对方打开即可载入这套配队"}catch{prompt("复制下面的分享链接：",url)}}
-function loadShare(){const m=location.hash.match(/^#p=(.+)$/);if(!m)return;try{const p=JSON.parse(dec(m[1]));if(!p||!Array.isArray(p.teams))throw Error();if(!confirm("检测到分享配队。是否载入这套配队？你的角色使用规则不会改变。")){history.replaceState(null,"",location.pathname+location.search);return}const ids=new Set(state.characters.map(c=>c.id));state.groups=p.teams.map(a=>({id:state.nextGroupId++,characterIds:Array.from({length:3},(_,i)=>ids.has(Number(a?.[i]))?Number(a[i]):null)}));if(!state.groups.length)state.groups=[{id:state.nextGroupId++,characterIds:[null,null,null]}];save("已载入分享配队");history.replaceState(null,"",location.pathname+location.search)}catch{$("notice").textContent="分享链接无法解析"}}
-$("addTeam").onclick=()=>{state.groups.push({id:state.nextGroupId++,characterIds:[null,null,null]});mutate("已添加配队")};$("share").onclick=share;$("newRound").onclick=newRound;$("settings").onclick=openSet;$("closePick").onclick=closePicker;$("closeSet").onclick=closeSet;$("search").oninput=renderPicker;$("setSearch").oninput=renderSettings;$("defaults").onclick=defaults;$("reset").onclick=reset;$("export").onclick=exportData;$("import").onclick=()=>$("file").click();$("file").onchange=e=>{const f=e.target.files?.[0];if(f)importData(f);e.target.value=""};$("pickerBack").onclick=e=>{if(e.target===$("pickerBack"))closePicker()};$("setBack").onclick=e=>{if(e.target===$("setBack"))closeSet()};document.onkeydown=e=>{if(e.key==="Escape"){if(!$("pickerBack").hidden)closePicker();else if(!$("setBack").hidden)closeSet()}};
-loadShare();render();save();
-})();
-</script>
+  <main class="app">
+    <header class="topbar">
+      <div class="title-block">
+        <h1>鸣潮矩阵配队助手</h1>
+        <p>快速组建矩阵配队，自动追踪角色剩余使用次数。</p>
+        <div id="saveStatus" class="save-status">● 已保存到本机</div>
+      </div>
+      <div class="top-actions">
+        <button id="shareBtn" class="btn primary" type="button">分享配置</button>
+        <button id="clearRoundBtn" class="btn" type="button">重新开始本轮</button>
+        <button id="settingsBtn" class="btn" type="button">⚙ 角色设置</button>
+      </div>
+    </header>
+
+    <section class="stats" aria-label="当前状态">
+      <div class="stat"><span>配队</span><strong id="teamCount">0</strong></div>
+      <div class="stat"><span>已用次数</span><strong id="usedCount">0</strong></div>
+      <div class="stat"><span>剩余次数</span><strong id="remainingCount">0</strong></div>
+      <div class="stat"><span>可选角色</span><strong id="availableCount">0</strong></div>
+    </section>
+
+    <section id="roverPanel" class="rover-panel">
+      <div>
+        <strong>漂泊者共享次数</strong>
+        <p>导电 / 气动 / 衍射 / 湮灭共同共享 1 次；选择任一形态后，其他形态同时不可用。</p>
+      </div>
+      <span id="roverBadge" class="usage-badge">1/1</span>
+    </section>
+
+    <section class="teams-section">
+      <div class="section-head">
+        <div>
+          <h2>配队</h2>
+          <p>点击空位直接选择角色；点击已选角色可快速替换。</p>
+        </div>
+        <button id="addTeamBtn" class="btn primary" type="button">+ 添加配队</button>
+      </div>
+      <div id="teamList" class="team-list"></div>
+    </section>
+
+    <div id="notice" class="notice" aria-live="polite"></div>
+
+    <footer>
+      <span>角色名单参考 <a href="https://ww.nanoka.cc/character/" target="_blank" rel="noreferrer">nanoka.cc</a></span>
+      <span>角色头像来自 <a href="https://github.com/ryanbenson/wuthering-waves-assets" target="_blank" rel="noreferrer">wuthering-waves-assets</a></span>
+    </footer>
+  </main>
+
+  <div id="pickerBackdrop" class="modal-backdrop" hidden>
+    <section class="modal picker-modal" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="pickerTitle">选择角色</h2>
+          <p id="pickerContext"></p>
+        </div>
+        <button id="closePickerBtn" class="icon-btn" type="button" aria-label="关闭">×</button>
+      </div>
+      <label class="search-wrap">
+        <span>搜索角色</span>
+        <input id="characterSearch" type="search" placeholder="输入角色名…" autocomplete="off">
+      </label>
+      <div id="pickerContent"></div>
+    </section>
+  </div>
+
+  <div id="settingsBackdrop" class="modal-backdrop" hidden>
+    <section class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="settingsTitle">角色设置</h2>
+          <p>平时无需修改；可在规则变化时调整名称和使用次数。</p>
+        </div>
+        <button id="closeSettingsBtn" class="icon-btn" type="button" aria-label="关闭">×</button>
+      </div>
+
+      <label class="search-wrap">
+        <span>查找角色</span>
+        <input id="settingsSearch" type="search" placeholder="搜索设置…" autocomplete="off">
+      </label>
+
+      <div id="settingsCharacterList" class="settings-list"></div>
+
+      <div class="settings-actions">
+        <button id="restoreDefaultsBtn" class="btn" type="button">恢复默认角色设置</button>
+        <button id="exportBtn" class="btn" type="button">导出备份</button>
+        <button id="importBtn" class="btn" type="button">导入备份</button>
+        <button id="resetAllBtn" class="btn danger" type="button">重置全部数据</button>
+        <input id="importFile" type="file" accept=".json,application/json" hidden>
+      </div>
+      <p class="settings-note">漂泊者始终共享 1 次。角色头像只用于识别，若外部头像资源无法加载，会自动显示文字占位。</p>
+    </section>
+  </div>
+
+  <script src="loader.js"></script>
 </body>
 </html>
