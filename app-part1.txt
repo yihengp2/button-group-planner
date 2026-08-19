@@ -1,0 +1,153 @@
+(() => {
+  "use strict";
+  const STORAGE_KEY = "wuwaTeamPlanner.v1";
+  const ASSET_BASE = "https://raw.githubusercontent.com/ryanbenson/wuthering-waves-assets/master/images/";
+  const DEFAULT_ROSTER = [{"id":1,"name":"散华","maxUses":1,"imageKey":"Sanhua"},{"id":2,"name":"白芷","maxUses":2,"imageKey":"Baizhi"},{"id":3,"name":"凌阳","maxUses":1,"imageKey":"Lingyang"},{"id":4,"name":"折枝","maxUses":1,"imageKey":"Zhezhi"},{"id":5,"name":"釉瑚","maxUses":1,"imageKey":"Youhu"},{"id":6,"name":"珂莱塔","maxUses":1,"imageKey":"Carlotta"},{"id":7,"name":"洛瑟菈","maxUses":1,"imageKey":"Lucilla"},{"id":8,"name":"绯雪","maxUses":1,"imageKey":"Hiyuki"},{"id":9,"name":"穗穗","maxUses":2,"imageKey":"Suisui"},{"id":10,"name":"炽霞","maxUses":1,"imageKey":"Chixia"},{"id":11,"name":"安可","maxUses":1,"imageKey":"Encore"},{"id":12,"name":"莫特斐","maxUses":1,"imageKey":"Mortefi"},{"id":13,"name":"长离","maxUses":1,"imageKey":"Changli"},{"id":14,"name":"布兰特","maxUses":1,"imageKey":"Brant"},{"id":15,"name":"露帕","maxUses":1,"imageKey":"Lupa"},{"id":16,"name":"嘉贝莉娜","maxUses":1,"imageKey":"Galbrena"},{"id":17,"name":"莫宁","maxUses":2,"imageKey":"Mornye"},{"id":18,"name":"爱弥斯","maxUses":1,"imageKey":"Aemeath"},{"id":19,"name":"达妮娅","maxUses":2,"imageKey":"Denia"},{"id":20,"name":"卡卡罗","maxUses":1,"imageKey":"Calcharo"},{"id":21,"name":"吟霖","maxUses":1,"imageKey":"Yinlin"},{"id":22,"name":"渊武","maxUses":1,"imageKey":"Yuanwu"},{"id":23,"name":"相里要","maxUses":1,"imageKey":"XiangliYao"},{"id":24,"name":"灯灯","maxUses":1,"imageKey":"Lumi"},{"id":25,"name":"奥古斯塔","maxUses":1,"imageKey":"Augusta"},{"id":26,"name":"卜灵","maxUses":2,"imageKey":"Buling"},{"id":27,"name":"丽贝卡","maxUses":1,"imageKey":"Rebecca"},{"id":28,"name":"漂泊者·导电","maxUses":1,"imageKey":"RoverElectroFemale","pool":"rover"},{"id":29,"name":"秧秧","maxUses":1,"imageKey":"Yangyang"},{"id":30,"name":"秋水","maxUses":1,"imageKey":"Aalto"},{"id":31,"name":"忌炎","maxUses":1,"imageKey":"Jiyan"},{"id":32,"name":"鉴心","maxUses":1,"imageKey":"Jianxin"},{"id":33,"name":"夏空","maxUses":1,"imageKey":"Ciaccona"},{"id":34,"name":"漂泊者·气动","maxUses":1,"imageKey":"RoverAeroFemale","pool":"rover"},{"id":35,"name":"卡提希娅","maxUses":1,"imageKey":"Cartethyia"},{"id":36,"name":"尤诺","maxUses":1,"imageKey":"Iuno"},{"id":37,"name":"仇远","maxUses":1,"imageKey":"Qiuyuan"},{"id":38,"name":"西格莉卡","maxUses":1,"imageKey":"Sigrika"},{"id":39,"name":"维里奈","maxUses":2,"imageKey":"Verina"},{"id":40,"name":"漂泊者·衍射","maxUses":1,"imageKey":"RoverSpectroFemale","pool":"rover"},{"id":41,"name":"今汐","maxUses":1,"imageKey":"Jinhsi"},{"id":42,"name":"守岸人","maxUses":2,"imageKey":"Shorekeeper"},{"id":43,"name":"菲比","maxUses":1,"imageKey":"Phoebe"},{"id":44,"name":"赞妮","maxUses":1,"imageKey":"Zani"},{"id":45,"name":"琳奈","maxUses":1,"imageKey":"Lynae"},{"id":46,"name":"陆·赫斯","maxUses":1,"imageKey":"LuukHerssen"},{"id":47,"name":"露西","maxUses":1,"imageKey":"Lucy"},{"id":48,"name":"桃祈","maxUses":1,"imageKey":"Taoqi"},{"id":49,"name":"丹瑾","maxUses":1,"imageKey":"Danjin"},{"id":50,"name":"椿","maxUses":1,"imageKey":"Camellya"},{"id":51,"name":"漂泊者·湮灭","maxUses":1,"imageKey":"RoverHavocFemale","pool":"rover"},{"id":52,"name":"洛可可","maxUses":1,"imageKey":"Roccia"},{"id":53,"name":"坎特蕾拉","maxUses":1,"imageKey":"Cantarella"},{"id":54,"name":"弗洛洛","maxUses":1,"imageKey":"Phrolova"},{"id":55,"name":"千咲","maxUses":1,"imageKey":"Chisa"},{"id":56,"name":"秧秧·玄翎","maxUses":1,"imageKey":"YangyangXuanling"},{"id":57,"name":"清宵","maxUses":1,"imageKey":"Qingxiao"},{"id":58,"name":"景燃","maxUses":1,"imageKey":"Jingran"}];
+  const byId = id => state.characters.find(c => c.id === Number(id));
+  let pickerTarget = null;
+
+  function defaultState() {
+    return {
+      nextGroupId: 2,
+      characters: DEFAULT_ROSTER.map(c => ({...c})),
+      groups: [{id:1, characterIds:[]}]
+    };
+  }
+
+  function normalizeState(input) {
+    if (!input || !Array.isArray(input.characters) || !Array.isArray(input.groups)) {
+      throw new Error("Invalid backup");
+    }
+    const incomingById = new Map(input.characters.map(c => [Number(c.id), c]));
+    const incomingByName = new Map(input.characters.map(c => [String(c.name), c]));
+    const characters = DEFAULT_ROSTER.map(def => {
+      const old = incomingById.get(def.id) || incomingByName.get(def.name);
+      const name = old && typeof old.name === "string" && old.name.trim() ? old.name.trim() : def.name;
+      const rawMax = old ? Math.floor(Number(old.maxUses)) : def.maxUses;
+      return {
+        ...def,
+        name,
+        maxUses: def.pool === "rover" ? 1 : (Number.isFinite(rawMax) && rawMax > 0 ? rawMax : def.maxUses)
+      };
+    });
+    const validIds = new Set(characters.map(c => c.id));
+    const groups = input.groups.map(g => ({
+      id: Number(g.id) || 0,
+      characterIds: Array.isArray(g.characterIds)
+        ? g.characterIds.slice(0,3).map(v => v == null ? null : Number(v)).map(v => validIds.has(v) ? v : null)
+        : []
+    }));
+    const cleanedGroups = groups.map(g => ({...g, characterIds: Array.from({length:3}, (_,i) => g.characterIds[i] ?? null)}));
+    const maxGroupId = cleanedGroups.reduce((m,g) => Math.max(m,g.id),0);
+    return {
+      nextGroupId: Math.max(Number(input.nextGroupId)||1, maxGroupId+1),
+      characters,
+      groups: cleanedGroups.length ? cleanedGroups : [{id:1, characterIds:[null,null,null]}]
+    };
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? normalizeState(JSON.parse(raw)) : defaultState();
+    } catch {
+      return defaultState();
+    }
+  }
+
+  let state = loadState();
+
+  const el = id => document.getElementById(id);
+  const saveStatus = el("saveStatus"), notice = el("notice"), teamList = el("teamList");
+  const pickerBackdrop = el("pickerBackdrop"), settingsBackdrop = el("settingsBackdrop");
+
+  function saveState(message) {
+    saveStatus.textContent = "● 保存中…";
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    saveStatus.textContent = "● 已保存到本机";
+    if (message) notice.textContent = message;
+  }
+
+  function isRover(c) { return c && c.pool === "rover"; }
+
+  function groupSlots(group) {
+    if (!Array.isArray(group.characterIds)) group.characterIds = [];
+    while (group.characterIds.length < 3) group.characterIds.push(null);
+    return group.characterIds.slice(0,3);
+  }
+
+  function usageCount(c, ignoreTarget = null) {
+    if (!c) return 0;
+    let count = 0;
+    for (const g of state.groups) {
+      const slots = groupSlots(g);
+      for (let i=0;i<3;i++) {
+        if (ignoreTarget && g.id === ignoreTarget.groupId && i === ignoreTarget.slotIndex) continue;
+        const used = byId(slots[i]);
+        if (!used) continue;
+        if (isRover(c)) {
+          if (isRover(used)) return 1;
+        } else if (used.id === c.id) {
+          count++;
+        }
+      }
+    }
+    return isRover(c) ? 0 : count;
+  }
+
+  function maxUses(c) { return isRover(c) ? 1 : Math.max(1, Number(c.maxUses)||1); }
+  function remaining(c, ignoreTarget = null) {
+    return Math.max(0, maxUses(c) - usageCount(c, ignoreTarget));
+  }
+
+  function totalCapacity() {
+    let total = 1;
+    for (const c of state.characters) if (!isRover(c)) total += maxUses(c);
+    return total;
+  }
+
+  function totalUsed() {
+    let total = 0;
+    let rover = false;
+    for (const g of state.groups) for (const id of groupSlots(g)) {
+      const c = byId(id);
+      if (!c) continue;
+      if (isRover(c)) rover = true; else total++;
+    }
+    return total + (rover ? 1 : 0);
+  }
+
+  function portraitUrl(c) {
+    return `${ASSET_BASE}${encodeURIComponent(c.imageKey).replace(/%2F/g,"/")}.png`;
+  }
+
+  function addPortraitErrorFallback(img, name) {
+    img.addEventListener("error", () => {
+      const fallback = document.createElement("div");
+      fallback.className = img.className.includes("tiny-portrait") ? "tiny-portrait portrait-fallback" : "portrait-fallback";
+      fallback.textContent = (name || "?").slice(0,1);
+      img.replaceWith(fallback);
+    }, {once:true});
+  }
+
+  function renderStats() {
+    const used = totalUsed(), total = totalCapacity();
+    el("teamCount").textContent = state.groups.length;
+    el("usedCount").textContent = used;
+    el("remainingCount").textContent = Math.max(0,total-used);
+    el("availableCount").textContent = state.characters.filter(c => remaining(c) > 0).length;
+    const rover = state.characters.find(isRover);
+    const roverLeft = rover ? remaining(rover) : 0;
+    el("roverBadge").textContent = `${roverLeft}/1`;
+    el("roverBadge").className = "usage-badge" + (roverLeft===0 ? " exhausted" : "");
+  }
+
+  function renderTeams() {
+    teamList.innerHTML = "";
+    state.groups.forEach((group, index) => {
+      groupSlots(group);
+      const card = document.createElement("article");
+      card.className = "team-card";
+
+      const head = document.createElement("div");
+      head.className = "team-head";
