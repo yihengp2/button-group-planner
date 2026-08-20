@@ -19,7 +19,7 @@
   <meta name="twitter:description" content="快速组建矩阵配队，自动追踪角色剩余使用次数。">
   <meta name="twitter:image" content="https://raw.githubusercontent.com/ryanbenson/wuthering-waves-assets/master/images/Qingxiao.png">
   <link rel="image_src" href="https://raw.githubusercontent.com/ryanbenson/wuthering-waves-assets/master/images/Qingxiao.png">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20260820-3">
 </head>
 <body>
   <main class="app">
@@ -52,6 +52,43 @@
       <span id="roverBadge" class="usage-badge">1/1</span>
     </section>
 
+    <section class="stage-panel" aria-labelledby="stageTitle">
+      <div class="stage-head">
+        <div>
+          <div class="stage-kicker">终焉矩阵 · 险境强袭 S2</div>
+          <h2 id="stageTitle">本期关卡 · 第一阶段</h2>
+          <p>稳态协议 · 轮 1</p>
+        </div>
+        <a class="stage-source" href="https://ww.nanoka.cc/newtower/14/" target="_blank" rel="noreferrer">查看数据源 ↗</a>
+      </div>
+
+      <div class="wave-grid" aria-label="敌人波次与抗性">
+        <article class="wave-card"><span class="wave-no">波 1</span><strong>矩阵集群 ×3</strong><span class="res-tag">导电抗性</span></article>
+        <article class="wave-card"><span class="wave-no">波 2</span><strong>哀声鸷</strong><span class="res-tag">衍射抗性</span></article>
+        <article class="wave-card"><span class="wave-no">波 3</span><strong>芙露德莉斯</strong><span class="res-tag">气动抗性</span></article>
+        <article class="wave-card"><span class="wave-no">波 4</span><strong>炉芯机骸</strong><span class="res-tag">热熔抗性</span></article>
+      </div>
+
+      <div class="stage-details">
+        <details>
+          <summary>回路增益 <span>4 项</span></summary>
+          <div class="circuit-list">
+            <div class="circuit-item"><strong>通用强化</strong><p>敌人受到伤害最终提升20%，敌人受到共鸣技能伤害最终提升20%。</p></div>
+            <div class="circuit-item"><strong>异常效应强化</strong><p>角色附加异常效应时，使目标受到伤害最终提升25%，持续30秒。角色附加虚湮效应时，自身造成伤害最终提升30%，持续15秒。</p></div>
+            <div class="circuit-item"><strong>声骸技能强化</strong><p>我方声骸技能伤害最终提升30%，热熔伤害最终提升20%，重击伤害最终提升20%。</p></div>
+            <div class="circuit-item"><strong>谐度破坏强化</strong><p>角色震谐伤害最终提升150%。角色附加谐度·偏移状态时，伤害最终提升25%，持续30秒。</p></div>
+          </div>
+        </details>
+        <details>
+          <summary>角色强化 <span>12 名</span></summary>
+          <p class="enhance-note">险境强袭 S2 周期强化角色：</p>
+          <div class="enhance-chips">
+            <span>忌炎</span><span>吟霖</span><span>今汐</span><span>长离</span><span>折枝</span><span>相里要</span><span>椿</span><span>珂莱塔</span><span>洛可可</span><span>菲比</span><span>布兰特</span><span>坎特蕾拉</span>
+          </div>
+        </details>
+      </div>
+    </section>
+
     <section class="teams-section">
       <div class="section-head">
         <div>
@@ -67,6 +104,7 @@
 
     <footer>
       <span>角色名单参考 <a href="https://ww.nanoka.cc/character/" target="_blank" rel="noreferrer">nanoka.cc</a></span>
+      <span>关卡数据参考 <a href="https://ww.nanoka.cc/newtower/14/" target="_blank" rel="noreferrer">nanoka.cc/newtower/14</a></span>
       <span>角色头像来自 <a href="https://github.com/ryanbenson/wuthering-waves-assets" target="_blank" rel="noreferrer">wuthering-waves-assets</a></span>
     </footer>
   </main>
@@ -74,16 +112,10 @@
   <div id="pickerBackdrop" class="modal-backdrop" hidden>
     <section class="modal picker-modal" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
       <div class="modal-head">
-        <div>
-          <h2 id="pickerTitle">选择角色</h2>
-          <p id="pickerContext"></p>
-        </div>
+        <div><h2 id="pickerTitle">选择角色</h2><p id="pickerContext"></p></div>
         <button id="closePickerBtn" class="icon-btn" type="button" aria-label="关闭">×</button>
       </div>
-      <label class="search-wrap">
-        <span>搜索角色</span>
-        <input id="characterSearch" type="search" placeholder="输入角色名…" autocomplete="off">
-      </label>
+      <label class="search-wrap"><span>搜索角色</span><input id="characterSearch" type="search" placeholder="输入角色名…" autocomplete="off"></label>
       <div id="pickerContent"></div>
     </section>
   </div>
@@ -91,20 +123,11 @@
   <div id="settingsBackdrop" class="modal-backdrop" hidden>
     <section class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
       <div class="modal-head">
-        <div>
-          <h2 id="settingsTitle">角色设置</h2>
-          <p>平时无需修改；可在规则变化时调整名称和使用次数。</p>
-        </div>
+        <div><h2 id="settingsTitle">角色设置</h2><p>平时无需修改；可在规则变化时调整名称和使用次数。</p></div>
         <button id="closeSettingsBtn" class="icon-btn" type="button" aria-label="关闭">×</button>
       </div>
-
-      <label class="search-wrap">
-        <span>查找角色</span>
-        <input id="settingsSearch" type="search" placeholder="搜索设置…" autocomplete="off">
-      </label>
-
+      <label class="search-wrap"><span>查找角色</span><input id="settingsSearch" type="search" placeholder="搜索设置…" autocomplete="off"></label>
       <div id="settingsCharacterList" class="settings-list"></div>
-
       <div class="settings-actions">
         <button id="restoreDefaultsBtn" class="btn" type="button">恢复默认角色设置</button>
         <button id="exportBtn" class="btn" type="button">导出备份</button>
@@ -116,6 +139,6 @@
     </section>
   </div>
 
-  <script src="loader.js?v=20260820-2"></script>
+  <script src="loader.js?v=20260820-3"></script>
 </body>
 </html>
