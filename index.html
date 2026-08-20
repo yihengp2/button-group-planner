@@ -19,7 +19,7 @@
   <meta name="twitter:description" content="快速组建矩阵配队，自动追踪角色剩余使用次数。">
   <meta name="twitter:image" content="https://raw.githubusercontent.com/ryanbenson/wuthering-waves-assets/master/images/Qingxiao.png">
   <link rel="image_src" href="https://raw.githubusercontent.com/ryanbenson/wuthering-waves-assets/master/images/Qingxiao.png">
-  <link rel="stylesheet" href="styles.css?v=20260820-3">
+  <link rel="stylesheet" href="styles.css?v=20260820-4">
 </head>
 <body>
   <main class="app">
@@ -27,6 +27,7 @@
       <div class="title-block">
         <h1>鸣潮矩阵配队助手</h1>
         <p>快速组建矩阵配队，自动追踪角色剩余使用次数。</p>
+        <div class="version-badge">终焉矩阵S2第2阶段</div>
         <div id="saveStatus" class="save-status">● 已保存到本机</div>
       </div>
       <div class="top-actions">
@@ -55,35 +56,47 @@
     <section class="stage-panel" aria-labelledby="stageTitle">
       <div class="stage-head">
         <div>
-          <div class="stage-kicker">终焉矩阵 · 险境强袭 S2</div>
-          <h2 id="stageTitle">本期关卡 · 第一阶段</h2>
-          <p>稳态协议 · 轮 1</p>
+          <div class="stage-kicker">终焉矩阵S2第2阶段 · 矩阵叠兵</div>
+          <h2 id="stageTitle">奇点扩张 · Round 1</h2>
+          <p>以下数据按你提供的 ID 14 截图整理。</p>
         </div>
         <a class="stage-source" href="https://ww.nanoka.cc/newtower/14/" target="_blank" rel="noreferrer">查看数据源 ↗</a>
       </div>
 
-      <div class="wave-grid" aria-label="敌人波次与抗性">
-        <article class="wave-card"><span class="wave-no">波 1</span><strong>矩阵集群 ×3</strong><span class="res-tag">导电抗性</span></article>
-        <article class="wave-card"><span class="wave-no">波 2</span><strong>哀声鸷</strong><span class="res-tag">衍射抗性</span></article>
-        <article class="wave-card"><span class="wave-no">波 3</span><strong>芙露德莉斯</strong><span class="res-tag">气动抗性</span></article>
-        <article class="wave-card"><span class="wave-no">波 4</span><strong>炉芯机骸</strong><span class="res-tag">热熔抗性</span></article>
+      <div class="wave-grid" aria-label="Round 1 敌人与抗性">
+        <article class="wave-card"><span class="wave-no">Round 1</span><strong>哀声鸷</strong><span class="res-tag">衍射抗性</span></article>
+        <article class="wave-card"><span class="wave-no">Round 1</span><strong>万固牢·枢躯</strong><span class="res-tag">热熔抗性</span></article>
+        <article class="wave-card"><span class="wave-no">Round 1</span><strong>异构武装</strong><span class="res-tag">冷凝抗性</span></article>
+        <article class="wave-card"><span class="wave-no">Round 1</span><strong>朔雷之鳞</strong><span class="res-tag">导电抗性</span></article>
+        <article class="wave-card"><span class="wave-no">Round 1</span><strong>矩阵奇藏</strong><span class="res-tag neutral">截图未显示抗性</span></article>
       </div>
 
       <div class="stage-details">
         <details>
           <summary>回路增益 <span>4 项</span></summary>
           <div class="circuit-list">
-            <div class="circuit-item"><strong>通用强化</strong><p>敌人受到伤害最终提升20%，敌人受到共鸣技能伤害最终提升20%。</p></div>
-            <div class="circuit-item"><strong>异常效应强化</strong><p>角色附加异常效应时，使目标受到伤害最终提升25%，持续30秒。角色附加虚湮效应时，自身造成伤害最终提升30%，持续15秒。</p></div>
-            <div class="circuit-item"><strong>声骸技能强化</strong><p>我方声骸技能伤害最终提升30%，热熔伤害最终提升20%，重击伤害最终提升20%。</p></div>
-            <div class="circuit-item"><strong>谐度破坏强化</strong><p>角色震谐伤害最终提升150%。角色附加谐度·偏移状态时，伤害最终提升25%，持续30秒。</p></div>
+            <div class="circuit-item"><strong>异常效应强化</strong><p>角色附加异常效应时，使目标受到伤害最终提升25%，持续30秒；敌人受到霜渐效应伤害最终提升80%。</p></div>
+            <div class="circuit-item"><strong>声骸技能强化</strong><p>我方声骸技能伤害最终提升30%，湮灭伤害最终提升20%，共鸣技能伤害最终提升20%。</p></div>
+            <div class="circuit-item"><strong>谐度破坏强化</strong><p>角色附加谐度·偏移状态时，全队伤害最终提升25%，持续30秒。角色附加集谐·偏移状态时，伤害最终提升30%，持续15秒。</p></div>
+            <div class="circuit-item"><strong>通用强化</strong><p>敌人受到伤害最终提升20%，敌人受到重击伤害最终提升20%。</p></div>
           </div>
         </details>
         <details>
-          <summary>角色强化 <span>12 名</span></summary>
-          <p class="enhance-note">险境强袭 S2 周期强化角色：</p>
-          <div class="enhance-chips">
-            <span>忌炎</span><span>吟霖</span><span>今汐</span><span>长离</span><span>折枝</span><span>相里要</span><span>椿</span><span>珂莱塔</span><span>洛可可</span><span>菲比</span><span>布兰特</span><span>坎特蕾拉</span>
+          <summary>角色强化 <span>13 名</span></summary>
+          <div class="character-buff-list">
+            <div class="character-buff"><strong>折枝</strong><p>角色最终伤害提升20%。施放共鸣解放时，队伍中的角色共鸣技能加成提升30%，持续30秒。</p></div>
+            <div class="character-buff"><strong>珂莱塔</strong><p>角色最终伤害提升25%。</p></div>
+            <div class="character-buff"><strong>长离</strong><p>角色最终伤害提升25%。</p></div>
+            <div class="character-buff"><strong>布兰特</strong><p>角色最终伤害提升25%。</p></div>
+            <div class="character-buff"><strong>达妮娅</strong><p>角色拥有额外疲劳值（限S2第2阶段）。</p></div>
+            <div class="character-buff"><strong>吟霖</strong><p>角色最终伤害提升20%。施放共鸣解放时，队伍中的角色共鸣解放加成提升30%，持续30秒。</p></div>
+            <div class="character-buff"><strong>今汐</strong><p>角色最终伤害提升25%。</p></div>
+            <div class="character-buff"><strong>相里要</strong><p>角色最终伤害提升25%。</p></div>
+            <div class="character-buff"><strong>忌炎</strong><p>角色最终伤害提升25%。</p></div>
+            <div class="character-buff"><strong>菲比</strong><p>角色最终伤害提升20%。施放共鸣解放时，队伍中的角色衍射伤害加成提升20%，持续30秒。</p></div>
+            <div class="character-buff"><strong>椿</strong><p>角色最终伤害提升25%。</p></div>
+            <div class="character-buff"><strong>洛可可</strong><p>角色最终伤害提升20%。施放共鸣解放时，队伍中的角色湮灭伤害加成提升20%，持续30秒。</p></div>
+            <div class="character-buff"><strong>坎特蕾拉</strong><p>角色最终伤害提升25%。</p></div>
           </div>
         </details>
       </div>
@@ -139,6 +152,6 @@
     </section>
   </div>
 
-  <script src="loader.js?v=20260820-3"></script>
+  <script src="loader.js?v=20260820-4"></script>
 </body>
 </html>
