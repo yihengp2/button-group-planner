@@ -3,6 +3,25 @@
       title.innerHTML = `<span class="team-index">${index+1}</span><span>配队 ${index+1}</span>`;
       const actions = document.createElement("div");
       actions.className = "team-actions";
+
+      const up = document.createElement("button");
+      up.className = "mini-btn"; up.type = "button"; up.textContent = "↑"; up.title = "上移";
+      up.disabled = index === 0;
+      up.addEventListener("click", () => {
+        if (index === 0) return;
+        [state.groups[index-1], state.groups[index]] = [state.groups[index], state.groups[index-1]];
+        mutate(`已将配队 ${index+1} 上移`);
+      });
+
+      const down = document.createElement("button");
+      down.className = "mini-btn"; down.type = "button"; down.textContent = "↓"; down.title = "下移";
+      down.disabled = index === state.groups.length - 1;
+      down.addEventListener("click", () => {
+        if (index === state.groups.length - 1) return;
+        [state.groups[index], state.groups[index+1]] = [state.groups[index+1], state.groups[index]];
+        mutate(`已将配队 ${index+1} 下移`);
+      });
+
       const clear = document.createElement("button");
       clear.className = "mini-btn"; clear.type = "button"; clear.textContent = "清空";
       clear.addEventListener("click", () => {
@@ -16,7 +35,7 @@
         if (!state.groups.length) state.groups.push({id:state.nextGroupId++, characterIds:[null,null,null]});
         mutate("已删除配队，角色次数已恢复");
       });
-      actions.append(clear,del); head.append(title,actions);
+      actions.append(up,down,clear,del); head.append(title,actions);
 
       const slots = document.createElement("div");
       slots.className = "slots";
