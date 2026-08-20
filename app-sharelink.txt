@@ -1,0 +1,24 @@
+
+  async function shareHelperLink() {
+    const url = `${location.origin}${location.pathname}`;
+    const title = "鸣潮矩阵配队助手";
+    const text = "鸣潮矩阵叠兵配队小助手";
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+        notice.textContent = "已打开分享菜单";
+        return;
+      }
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      notice.textContent = "小助手链接已复制";
+    } catch {
+      prompt("复制下面的小助手链接：", url);
+    }
+  }
+
+  const helperShareBtn = el("shareHelperBtn");
+  if (helperShareBtn) helperShareBtn.addEventListener("click", shareHelperLink);
