@@ -73,34 +73,12 @@
     }
   }
 
-  function toBase64Url(text) {
-    const bytes=new TextEncoder().encode(text); let bin="";
-    bytes.forEach(b=>bin+=String.fromCharCode(b));
-    return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");
-  }
+  // Keep support for old shared configuration URLs, but new sharing generates a PNG instead.
   function fromBase64Url(text) {
     let s=text.replace(/-/g,"+").replace(/_/g,"/");
     while(s.length%4) s+="=";
     const bin=atob(s); const bytes=Uint8Array.from(bin,ch=>ch.charCodeAt(0));
     return new TextDecoder().decode(bytes);
-  }
-
-  function sharePayload() {
-    return {
-      v:2,
-      teams:state.groups.map(g=>groupSlots(g).map(id=>id?byId(id)?.name||null:null))
-    };
-  }
-
-  async function shareConfig() {
-    const encoded=toBase64Url(JSON.stringify(sharePayload()));
-    const url=`${location.origin}${location.pathname}${location.search}#p=${encoded}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      notice.textContent="分享链接已复制；对方打开即可载入这套配队";
-    } catch {
-      prompt("复制下面的分享链接：",url);
-    }
   }
 
   function loadSharedConfig() {
@@ -109,7 +87,7 @@
     try {
       const payload=JSON.parse(fromBase64Url(m[1]));
       if (!payload || !Array.isArray(payload.teams)) throw new Error();
-      if (!confirm("检测到分享配队。是否载入这套配队？你的角色使用规则不会改变。")) return;
+      if (!confirm("检测到旧版分享配队。是否载入这套配队？你的角色使用规则不会改变。")) return;
       const nameMap=new Map(state.characters.map(c=>[c.name,c.id]));
       const idSet=new Set(state.characters.map(c=>c.id));
       state.groups=payload.teams.map(values=>({
@@ -121,17 +99,213 @@
         })
       }));
       if (!state.groups.length) state.groups=[{id:state.nextGroupId++,characterIds:[null,null,null]}];
-      saveState("已载入分享配队");
+      saveState("已载入旧版分享配队");
       history.replaceState(null,"",location.pathname+location.search);
     } catch {
       notice.textContent="分享链接无法解析";
     }
   }
 
+  function posterRoundRect(ctx,x,y,w,h,r) {
+    const rr=Math.min(r,w/2,h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y);
+    ctx.arcTo(x+w,y,x+w,y+h,rr);
+    ctx.arcTo(x+w,y+h,x,y+h,rr);
+    ctx.arcTo(x,y+h,x,y,rr);
+    ctx.arcTo(x,y,x+w,y,rr);
+    ctx.closePath();
+  }
+
+  async function posterImage(url) {
+    try {
+      const response=await fetch(url,{cache:"force-cache"});
+      if(!response.ok) throw new Error();
+      const blob=await response.blob();
+      const objectUrl=URL.createObjectURL(blob);
+      const image=await new Promise((resolve,reject)=>{
+        const img=new Image();
+        img.onload=()=>resolve(img);
+        img.onerror=reject;
+        img.src=objectUrl;
+      });
+      URL.revokeObjectURL(objectUrl);
+      return image;
+    } catch {
+      return null;
+    }
+  }
+
+  function drawImageCover(ctx,img,x,y,w,h) {
+    const scale=Math.max(w/img.width,h/img.height);
+    const sw=w/scale, sh=h/scale;
+    const sx=(img.width-sw)/2, sy=Math.max(0,(img.height-sh)*0.18);
+    ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+  }
+
+  async function buildSharePoster() {
+    const width=1080;
+    const margin=48;
+    const header=172;
+    const cardH=238;
+    const gap=22;
+    const footer=88;
+    const groups=state.groups;
+    const height=header+groups.length*(cardH+gap)+footer;
+    const canvas=document.createElement("canvas");
+    canvas.width=width; canvas.height=height;
+    const ctx=canvas.getContext("2d");
+
+    ctx.fillStyle="#f4f6f8";
+    ctx.fillRect(0,0,width,height);
+    ctx.fillStyle="#111827";
+    ctx.font='700 52px system-ui, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText("鸣潮矩阵配队助手",margin,70);
+    ctx.fillStyle="#667085";
+    ctx.font='28px system-ui, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText(`共 ${groups.length} 个配队`,margin,116);
+    ctx.fillStyle="#98a2b3";
+    ctx.font='22px system-ui, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText("按当前配队顺序生成",margin,150);
+
+    let y=header;
+    for(let gi=0;gi<groups.length;gi++){
+      const group=groups[gi];
+      posterRoundRect(ctx,margin,y,width-margin*2,cardH,24);
+      ctx.fillStyle="#ffffff"; ctx.fill();
+      ctx.strokeStyle="#dfe3e8"; ctx.lineWidth=2; ctx.stroke();
+
+      posterRoundRect(ctx,margin+22,y+18,54,54,14);
+      ctx.fillStyle="#eff6ff"; ctx.fill();
+      ctx.fillStyle="#2563eb";
+      ctx.font='700 27px system-ui, "PingFang SC", sans-serif';
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(String(gi+1),margin+49,y+45);
+      ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+      ctx.fillStyle="#111827";
+      ctx.font='700 30px system-ui, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.fillText(`配队 ${gi+1}`,margin+92,y+56);
+
+      const slotY=y+88;
+      const innerW=width-margin*2-44;
+      const slotGap=16;
+      const slotW=(innerW-slotGap*2)/3;
+      const ids=groupSlots(group);
+      for(let si=0;si<3;si++){
+        const x=margin+22+si*(slotW+slotGap);
+        posterRoundRect(ctx,x,slotY,slotW,126,18);
+        ctx.fillStyle="#f9fafb"; ctx.fill();
+        ctx.strokeStyle="#e4e7ec"; ctx.lineWidth=1.5; ctx.stroke();
+        const c=byId(ids[si]);
+        if(!c){
+          ctx.fillStyle="#98a2b3";
+          ctx.font='25px system-ui, "PingFang SC", sans-serif';
+          ctx.fillText("空位",x+26,slotY+72);
+          continue;
+        }
+        const px=x+12, py=slotY+12, pw=82, ph=102;
+        const image=await posterImage(portraitUrl(c));
+        ctx.save();
+        posterRoundRect(ctx,px,py,pw,ph,12); ctx.clip();
+        if(image) drawImageCover(ctx,image,px,py,pw,ph);
+        else {
+          ctx.fillStyle="#e9edf2"; ctx.fillRect(px,py,pw,ph);
+          ctx.fillStyle="#667085"; ctx.font='700 34px system-ui, "PingFang SC", sans-serif';
+          ctx.textAlign="center"; ctx.textBaseline="middle";
+          ctx.fillText((c.name||"?").slice(0,1),px+pw/2,py+ph/2);
+          ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+        }
+        ctx.restore();
+        ctx.fillStyle="#111827";
+        ctx.font='700 27px system-ui, "PingFang SC", "Microsoft YaHei", sans-serif';
+        const maxName=7;
+        const displayName=c.name.length>maxName?c.name.slice(0,maxName)+"…":c.name;
+        ctx.fillText(displayName,x+108,slotY+52);
+        ctx.fillStyle="#667085";
+        ctx.font='21px system-ui, "PingFang SC", "Microsoft YaHei", sans-serif';
+        ctx.fillText(isRover(c)?"漂泊者共享":"角色",x+108,slotY+87);
+      }
+      y+=cardH+gap;
+    }
+
+    ctx.fillStyle="#98a2b3";
+    ctx.font='22px system-ui, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText("由 鸣潮矩阵配队助手 生成",margin,height-34);
+    return canvas;
+  }
+
+  function canvasBlob(canvas) {
+    return new Promise(resolve=>canvas.toBlob(resolve,"image/png",1));
+  }
+
+  function closeSharePreview() {
+    const old=el("sharePreviewBackdrop");
+    if(old) old.remove();
+    document.body.style.overflow="";
+  }
+
+  function showSharePreview(dataUrl,blob) {
+    closeSharePreview();
+    const back=document.createElement("div");
+    back.id="sharePreviewBackdrop";
+    back.className="modal-backdrop";
+    const modal=document.createElement("section");
+    modal.className="modal";
+    modal.style.maxWidth="720px";
+    modal.innerHTML=`<div class="modal-head"><div><h2>分享图片</h2><p>长按图片可保存或转发；也可以使用下面的按钮。</p></div><button class="icon-btn" type="button" aria-label="关闭">×</button></div>`;
+    const image=document.createElement("img");
+    image.src=dataUrl; image.alt="鸣潮矩阵配队分享图";
+    image.style.cssText="display:block;width:100%;height:auto;border-radius:14px;border:1px solid #dfe3e8;background:#f4f6f8";
+    const actions=document.createElement("div");
+    actions.style.cssText="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px";
+    const file=new File([blob],"鸣潮矩阵配队助手.png",{type:"image/png"});
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      const share=document.createElement("button");
+      share.className="btn primary"; share.type="button"; share.textContent="分享PNG";
+      share.onclick=async()=>{
+        try{await navigator.share({files:[file],title:"鸣潮矩阵配队助手"});}
+        catch(err){if(err?.name!=="AbortError") console.error(err);}
+      };
+      actions.append(share);
+    }
+    const download=document.createElement("button");
+    download.className="btn"; download.type="button"; download.textContent="下载PNG";
+    download.onclick=()=>{
+      const url=URL.createObjectURL(blob),a=document.createElement("a");
+      a.href=url; a.download="鸣潮矩阵配队助手.png"; document.body.append(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    };
+    actions.append(download);
+    modal.append(image,actions); back.append(modal); document.body.append(back);
+    modal.querySelector(".icon-btn").onclick=closeSharePreview;
+    back.onclick=e=>{if(e.target===back)closeSharePreview();};
+    document.body.style.overflow="hidden";
+  }
+
+  async function shareImage() {
+    const button=el("shareBtn");
+    const oldText=button.textContent;
+    try{
+      button.disabled=true; button.textContent="生成中…";
+      notice.textContent="正在生成配队图片…";
+      const canvas=await buildSharePoster();
+      const blob=await canvasBlob(canvas);
+      if(!blob) throw new Error("PNG export failed");
+      const dataUrl=canvas.toDataURL("image/png");
+      showSharePreview(dataUrl,blob);
+      notice.textContent="分享图已生成";
+    }catch(err){
+      console.error(err);
+      notice.textContent="生成分享图失败，请稍后重试";
+    }finally{
+      button.disabled=false; button.textContent=oldText;
+    }
+  }
+
   el("addTeamBtn").addEventListener("click",()=>{
     state.groups.push({id:state.nextGroupId++,characterIds:[null,null,null]}); mutate("已添加配队");
   });
-  el("shareBtn").addEventListener("click",shareConfig);
+  el("shareBtn").addEventListener("click",shareImage);
   el("clearRoundBtn").addEventListener("click",clearRound);
   el("settingsBtn").addEventListener("click",openSettings);
   el("closePickerBtn").addEventListener("click",closePicker);
@@ -148,7 +322,11 @@
   pickerBackdrop.addEventListener("click",e=>{if(e.target===pickerBackdrop)closePicker();});
   settingsBackdrop.addEventListener("click",e=>{if(e.target===settingsBackdrop)closeSettings();});
   document.addEventListener("keydown",e=>{
-    if(e.key==="Escape"){ if(!pickerBackdrop.hidden)closePicker(); else if(!settingsBackdrop.hidden)closeSettings(); }
+    if(e.key==="Escape"){
+      if(el("sharePreviewBackdrop")) closeSharePreview();
+      else if(!pickerBackdrop.hidden)closePicker();
+      else if(!settingsBackdrop.hidden)closeSettings();
+    }
   });
 
   loadSharedConfig();
